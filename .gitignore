@@ -1,0 +1,18 @@
+# local config (parole)
+config/config.local.php
+
+# uploads / runtime
+/storage/uploads/
+/storage/cache/
+/storage/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# vendor (dacă vei folosi composer)
+vendor/

@@ -1,0 +1,8 @@
+{
+  "name": "Web Agency App",
+  "short_name": "Agency",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a"
+}
