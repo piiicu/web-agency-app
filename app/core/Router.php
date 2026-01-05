@@ -1,4 +1,10 @@
 <?php
+/**
+ * @deprecated
+ * This Router is no longer used.
+ * Routing is handled in index.php
+ */
+
 
 class Router {
     public static function dispatch($url) {
