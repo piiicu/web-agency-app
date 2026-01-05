@@ -36,7 +36,7 @@
 <hr>
 
 <h3>Add message</h3>
-<form method="POST" action="<?= BASE_URL ?>admin/ticket-message">
+<form method="POST" action="<?= BASE_URL ?>admin/ticket-message" enctype="multipart/form-data">
   <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
   <textarea name="body" placeholder="Write message / internal note..." style="width: 70%; height: 120px;" required></textarea>
   <br><br>
@@ -45,5 +45,22 @@
     Internal note (client can't see)
   </label>
   <br><br>
+  <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
+  <br><br>
   <button type="submit">Send</button>
 </form>
+
+<?php if (!empty($attachments)): ?>
+  <hr>
+  <h3>Attachments</h3>
+  <ul>
+    <?php foreach ($attachments as $a): ?>
+      <li>
+        <a href="<?= BASE_URL ?>ticket-attachment&id=<?= (int)$a['id'] ?>" target="_blank">
+          <?= htmlspecialchars($a['original_name']) ?>
+        </a>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+<?php endif; ?>
+

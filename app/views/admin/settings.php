@@ -4,7 +4,7 @@
 
 <ul>
   <li><a href="<?= BASE_URL ?>admin/users">Users (create clients / invite links)</a></li>
-  <li><a href="<?= BASE_URL ?>account/password">Change my password</a></li>
+  <li><a href="<?= BASE_URL ?>admin/change-password">Change my password</a></li>
 </ul>
 
 <p style="color:#666;">
