@@ -1,12 +1,19 @@
-<?php Auth::requireRole(['admin', 'employee', 'staff']); ?>
-<h2>Admin Dashboard</h2>
+<?php
+// app/views/admin/dashboard.php
+Auth::requireRole(['admin']);
+require __DIR__ . '/_nav.php';
+?>
 
-<ul>
-  <li><a href="<?= BASE_URL ?>tasks">Taskuri (temporar)</a></li>
-  <li><a href="<?= BASE_URL ?>chat">Chat (temporar)</a></li>
-  <li><a href="<?= BASE_URL ?>logout">Logout</a></li>
-</ul>
+<h2>Panou de control administrator</h2>
 
-<p style="color:#666;">
-  Următorul pas: Inbox tichete + taskuri interne + chat pe ticket.
-</p>
+<p>Alege o secțiune din meniul de sus.</p>
+
+<div style="margin-top: 12px; border:1px solid #ddd; padding: 12px;">
+  <h3>Scurtături</h3>
+  <ul>
+    <li><a href="<?= BASE_URL ?>admin/tickets">Tickets (Inbox)</a></li>
+    <li><a href="<?= BASE_URL ?>admin/internal-tasks">Internal Tasks</a></li>
+    <li><a href="<?= BASE_URL ?>admin/clients">Clients</a></li>
+    <li><a href="<?= BASE_URL ?>admin/settings">Settings</a></li>
+  </ul>
+</div>

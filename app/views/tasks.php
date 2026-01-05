@@ -15,7 +15,7 @@ function tasks_url($params = []) {
 <h2>Task-uri</h2>
 
 <div style="margin-bottom:15px;">
-    <a href="<?= BASE_URL ?>dashboard">⬅ Dashboard</a>
+    <a href="<?= BASE_URL ?>admin/dashboard">← Dashboard</a>
 </div>
 
 <!-- Formular adăugare task -->

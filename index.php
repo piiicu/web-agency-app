@@ -10,6 +10,7 @@ require_once __DIR__ . '/app/core/Auth.php';
 require_once __DIR__ . '/app/controllers/AuthController.php';
 require_once __DIR__ . '/app/controllers/TaskController.php';
 require_once __DIR__ . '/app/controllers/ChatController.php';
+require_once __DIR__ . '/app/controllers/TicketController.php';
 
 /* 2️⃣ ROUTE */
 $route = $_GET['route'] ?? 'login';
@@ -104,6 +105,84 @@ if ($route === 'chat-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     (new ChatController())->poll();
     exit;
 }
+
+// TICKETS - CLIENT
+if ($route === 'client/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['client']);
+    (new TicketController())->clientIndex();
+    exit;
+}
+
+if ($route === 'client/tickets-create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['client']);
+    (new TicketController())->clientStore();
+    exit;
+}
+
+if ($route === 'client/ticket' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['client']);
+    (new TicketController())->clientShow();
+    exit;
+}
+
+if ($route === 'client/ticket-message' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['client']);
+    (new TicketController())->clientAddMessage();
+    exit;
+}
+
+// TICKETS - ADMIN/STAFF
+if ($route === 'admin/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminIndex();
+    exit;
+}
+
+if ($route === 'admin/ticket' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminShow();
+    exit;
+}
+
+if ($route === 'admin/ticket-message' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminAddMessage();
+    exit;
+}
+
+if ($route === 'admin/ticket-status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminUpdateStatus();
+    exit;
+}
+
+// ADMIN TABS
+if ($route === 'admin/internal-tasks') {
+    Auth::requireRole(['admin']);
+    header("Location: " . BASE_URL . "tasks"); // reuse tasks ca internal tasks
+    exit;
+}
+
+if ($route === 'admin/clients' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin']);
+    require_once __DIR__ . '/app/controllers/ClientController.php';
+    (new ClientController())->index();
+    exit;
+}
+
+if ($route === 'admin/client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin']);
+    require_once __DIR__ . '/app/controllers/ClientController.php';
+    (new ClientController())->show();
+    exit;
+}
+
+if ($route === 'admin/settings' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin']);
+    require __DIR__ . '/app/views/admin/settings.php';
+    exit;
+}
+
 
 /* 5️⃣ ROUTE SIMPLE → VIEWS */
 

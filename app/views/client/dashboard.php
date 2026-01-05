@@ -1,8 +1,8 @@
 <?php Auth::requireRole(['client']); ?>
-<h2>Client Dashboard</h2>
+<h2>Panou control client</h2>
 
 <ul>
-  <li><a href="<?= BASE_URL ?>chat">Suport / Chat</a></li>
+  <li><a href="<?= BASE_URL ?>client/tickets">My Tickets</a></li>
   <li><a href="<?= BASE_URL ?>logout">Logout</a></li>
 </ul>
 
