@@ -6,36 +6,49 @@ class AuthController
     {
         global $pdo;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = $_POST['email'];
-            $password = $_POST['password'];
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user && password_verify($password, $user['password'])) {
-
-                $_SESSION['user'] = [
-                    'id' => $user['id'],
-                    'name' => $user['name'],
-                    'role' => $user['role']
-                ];
-
-                // 🔽 AICI este redirect-ul smart
-                $role = Auth::role();
-
-                if (in_array($role, ['admin', 'employee', 'staff'], true)) {
-                    header("Location: " . BASE_URL . "admin/dashboard");
-                } else {
-                    header("Location: " . BASE_URL . "client/dashboard");
-                }
-                exit;
-            }
+        if (!$user) {
+            $_SESSION['flash_error'] = 'Email sau parolă greșită';
+            header("Location: " . BASE_URL . "login");
+            exit;
         }
 
-        require __DIR__ . '/../views/login.php';
+
+        // 🔒 User dezactivat
+        if (isset($user['is_active']) && (int)$user['is_active'] === 0) {
+            $_SESSION['flash_error'] = 'Cont dezactivat. Contactează administratorul.';
+            header("Location: " . BASE_URL . "login");
+            exit;
+        }
+
+        if (!password_verify($password, $user['password'])) {
+            $_SESSION['flash_error'] = 'Email sau parolă greșită';
+            header("Location: " . BASE_URL . "login");
+            exit;
+        }
+
+        $_SESSION['user'] = [
+            'id'    => $user['id'],
+            'role'  => $user['role'],
+            'name'  => $user['name'],
+            'email' => $user['email'],
+        ];
+
+        // redirect smart
+        if ($user['role'] === 'client') {
+            header("Location: " . BASE_URL . "client/dashboard");
+        } else {
+            header("Location: " . BASE_URL . "admin/dashboard");
+        }
+        exit;
     }
+
 
     public function changePassword()
     {

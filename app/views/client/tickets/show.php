@@ -1,6 +1,6 @@
 <?php Auth::requireRole(['client']); ?>
 <?php require __DIR__ . '/../../partials/head.php'; ?>
-<div class="container">
+<div class="container client-ticket">
     <p><a href="<?= BASE_URL ?>client/tickets">⬅ Înapoi la Ticket-ele mele</a></p>
 
     <style>

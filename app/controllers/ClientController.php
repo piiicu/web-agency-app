@@ -159,4 +159,80 @@ class ClientController
 
         require __DIR__ . '/../views/client/dashboard.php';
     }
+
+    public function disable()
+    {
+        global $pdo;
+
+        Auth::requireRole(['admin']);
+
+        $clientId = (int)($_POST['id'] ?? 0);
+        if ($clientId <= 0) {
+            http_response_code(400);
+            exit('Bad request');
+        }
+
+        // nu dezactiva contul cu care ești logat (extra safe)
+        if ($clientId === Auth::id()) {
+            $_SESSION['flash_error'] = 'Nu poți dezactiva contul cu care ești logat.';
+            header("Location: " . BASE_URL . "admin/clients");
+            exit;
+        }
+
+        // asigură-te că e client
+        $stmt = $pdo->prepare("SELECT id, role FROM users WHERE id=? LIMIT 1");
+        $stmt->execute([$clientId]);
+        $u = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$u || $u['role'] !== 'client') {
+            $_SESSION['flash_error'] = 'Utilizator invalid (nu este client).';
+            header("Location: " . BASE_URL . "admin/clients");
+            exit;
+        }
+
+        $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
+        $stmt->execute([$clientId]);
+
+        $_SESSION['flash_success'] = 'Client dezactivat (șters).';
+        header("Location: " . BASE_URL . "admin/clients");
+        exit;
+    }
+
+    public function deleteOwnAccount()
+    {
+        global $pdo;
+
+        Auth::requireRole(['client']);
+
+        $userId = Auth::id();
+        $password = $_POST['current_password'] ?? '';
+
+        // ia parola hash din DB
+        $stmt = $pdo->prepare("SELECT id, password FROM users WHERE id=? LIMIT 1");
+        $stmt->execute([$userId]);
+        $me = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$me) {
+            http_response_code(404);
+            exit('User not found');
+        }
+
+        // confirmare prin parolă (foarte important)
+        if (!password_verify($password, $me['password'])) {
+            $_SESSION['flash_error'] = 'Parola curentă este greșită.';
+            header("Location: " . BASE_URL . "client/account#security");
+            exit;
+        }
+
+        // dezactivează contul
+        $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
+        $stmt->execute([$userId]);
+
+        // delogare
+        session_destroy();
+        session_start();
+        $_SESSION['flash_success'] = 'Contul tău a fost șters (dezactivat).';
+        header("Location: " . BASE_URL . "login");
+        exit;
+    }
 }

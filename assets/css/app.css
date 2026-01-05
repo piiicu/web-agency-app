@@ -61,6 +61,7 @@ a {
   outline: none;
   background: #fff;
 }
+
 .input:focus {
   border-color: #111;
 }
@@ -110,30 +111,7 @@ a {
   display: block;
 }
 
-/* Table */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  overflow: hidden;
-}
-.table th,
-.table td {
-  padding: 12px;
-  border-top: 1px solid #f1f5f9;
-  text-align: left;
-}
-.table th {
-  background: #f5f5f5;
-  border-top: none;
-}
-.table tr:hover {
-  background: #fafafa;
-}
-
-/* Layout sidebar (client dashboard) */
+/* Layout */
 .layout {
   display: flex;
   gap: 18px;
@@ -155,6 +133,11 @@ a {
 .sidebar a:hover {
   background: #f3f4f6;
 }
+.sidebar a.active {
+  background: #f3f4f6;
+  font-weight: 800;
+}
+
 .content {
   flex: 1;
   border: 1px solid #e5e7eb;
@@ -188,4 +171,89 @@ a {
 }
 .muted {
   color: #6b7280;
+}
+
+/* Profile card */
+.profile-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  margin-top: 8px;
+  margin-right: 8px;
+}
+
+/* Titles */
+/* .h2 {
+  font-size: 28px;
+  margin: 0 0 12px;
+} */
+.h3 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+.title {
+  margin: 0 0 6px;
+  font-weight: 800;
+}
+.page-title, h2 {
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 600;
+}
+.section-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Helpers */
+.mt-14 {
+  margin-top: 14px;
+}
+.flex-1 {
+  flex: 1;
+}
+
+/* Table (UNIFIED) */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.table th,
+.table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-top: 1px solid #f1f5f9;
+}
+.table th {
+  background: #f9fafb;
+  font-weight: 700;
+  border-top: none;
+}
+.table tr:hover {
+  background: #f3f4f6;
+}
+
+.form-row {
+  margin-bottom: 12px;
+}
+
+.profile-name {
+  font-size: 28px;
+  margin: 0 0 4px;
+  font-weight: 800;
+}
+.profile-email {
+  font-size: 16px;
 }

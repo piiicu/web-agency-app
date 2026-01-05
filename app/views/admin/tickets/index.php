@@ -1,7 +1,4 @@
-<?php
-// app/views/admin/tickets/index.php
-require __DIR__ . '/../_nav.php';
-?>
+<?php require __DIR__ . '/../_layout_start.php'; ?>
 
 <h2>Tickets Inbox</h2>
 
@@ -30,3 +27,4 @@ require __DIR__ . '/../_nav.php';
     </tr>
   <?php endforeach; ?>
 </table>
+<?php require __DIR__ . '/../_layout_end.php'; ?>

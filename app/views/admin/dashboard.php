@@ -1,19 +1,51 @@
+<?php require __DIR__ . '/_layout_start.php'; ?>
+
 <?php
-// app/views/admin/dashboard.php
-Auth::requireRole(['admin']);
-require __DIR__ . '/_nav.php';
+  $name  = $me['name'] ?? '';
+  $email = $me['email'] ?? '';
+  $phone = $me['phone'] ?? '';
+  $role  = $me['role'] ?? '';
+  $initial = strtoupper(substr(trim($name), 0, 1)) ?: '?';
 ?>
 
-<h2>Panou de control administrator</h2>
+<h2 class="page-title">Bine ai venit <?= htmlspecialchars($name) ?>!</h2>
 
-<p>Alege o secțiune din meniul de sus.</p>
+<h3 class="section-title">Informații personale</h3>
 
-<div style="margin-top: 12px; border:1px solid #ddd; padding: 12px;">
-  <h3>Scurtături</h3>
-  <ul>
-    <li><a href="<?= BASE_URL ?>admin/tickets">Tickets (Inbox)</a></li>
-    <li><a href="<?= BASE_URL ?>admin/internal-tasks">Internal Tasks</a></li>
-    <li><a href="<?= BASE_URL ?>admin/clients">Clients</a></li>
-    <li><a href="<?= BASE_URL ?>admin/settings">Settings</a></li>
-  </ul>
+<div class="card card--muted">
+  <div class="profile-row">
+    <div>
+      <?php if (!empty($me['avatar'])): ?>
+        <img class="avatar" src="<?= BASE_URL ?>avatar&user_id=<?= (int)$me['id'] ?>" alt="avatar">
+      <?php else: ?>
+        <div class="avatar-fallback"><?= htmlspecialchars($initial) ?></div>
+      <?php endif; ?>
+    </div>
+
+    <div class="flex-1">
+      <div class="profile-name">
+        <?= htmlspecialchars($name) ?>
+      </div>
+
+      <div class="muted profile-email">
+        <?= htmlspecialchars($email) ?>
+      </div>
+
+      <div class="mt-14">
+        <?php if (!empty($phone)): ?>
+          <span class="pill">📞 <?= htmlspecialchars($phone) ?></span>
+        <?php endif; ?>
+
+        <?php if (!empty($role)): ?>
+          <span class="pill">🛡 <?= htmlspecialchars($role) ?></span>
+        <?php endif; ?>
+      </div>
+
+      <div class="mt-14">
+        <a href="<?= BASE_URL ?>admin/settings#profile">✏️ Editează profilul în Settings</a>
+      </div>
+    </div>
+  </div>
 </div>
+
+<?php require __DIR__ . '/_layout_end.php'; ?>

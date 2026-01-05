@@ -171,4 +171,31 @@ class UserController
         header("Location: " . BASE_URL . "login");
         exit;
     }
+
+    public function disable()
+    {
+        global $pdo;
+
+        Auth::requireRole(['admin']);
+
+        $targetId = (int)($_POST['id'] ?? 0);
+        if ($targetId <= 0) {
+            http_response_code(400);
+            exit('Bad request');
+        }
+
+        // nu te poți dezactiva pe tine
+        if ($targetId === Auth::id()) {
+            $_SESSION['flash_error'] = 'Nu poți dezactiva contul cu care ești logat.';
+            header("Location: " . BASE_URL . "admin/users");
+            exit;
+        }
+
+        $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id = ? LIMIT 1");
+        $stmt->execute([$targetId]);
+
+        $_SESSION['flash_success'] = 'Utilizator dezactivat.';
+        header("Location: " . BASE_URL . "admin/users");
+        exit;
+    }
 }

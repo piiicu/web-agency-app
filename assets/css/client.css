@@ -1,0 +1,20 @@
+/* Client-specific pages */
+
+/* Account */
+.client-account .tabs {
+  margin-top: 18px;
+}
+
+.client-account .tab-panel h3 {
+  margin-top: 0;
+}
+
+/* Client dashboard */
+.client-dashboard .profile-row {
+  align-items: center;
+}
+
+/* Client tickets */
+.client-tickets .table td {
+  vertical-align: middle;
+}

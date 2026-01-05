@@ -1,4 +1,4 @@
-<?php require __DIR__ . '/../_nav.php'; ?>
+<?php require __DIR__ . '/../_layout_start.php'; ?>
 
 <h2>Admin → Users</h2>
 
@@ -91,3 +91,5 @@ function copyInviteLink() {
   });
 }
 </script>
+
+<?php require __DIR__ . '/../_layout_end.php'; ?>

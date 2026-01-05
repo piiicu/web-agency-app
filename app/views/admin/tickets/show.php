@@ -1,4 +1,4 @@
-<?php require __DIR__ . '/_nav.php'; ?>
+<?php require __DIR__ . '/../_layout_start.php'; ?>
 
 <h2>Ticket #<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h2>
 <p><a href="<?= BASE_URL ?>admin/tickets">⬅ Back to inbox</a></p>
@@ -63,4 +63,6 @@
     <?php endforeach; ?>
   </ul>
 <?php endif; ?>
+<?php require __DIR__ . '/../_layout_end.php'; ?>
+
 

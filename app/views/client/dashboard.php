@@ -1,7 +1,7 @@
 <?php Auth::requireRole(['client']); ?>
-<?php require __DIR__ . '/_nav.php'; ?>
+<!-- <?php require __DIR__ . '/_nav.php'; ?> -->
 <?php require __DIR__ . '/../partials/head.php'; ?>
-<div class="container">
+<div class="container client-dashboard">
   <style>
     .layout {
       display: flex;

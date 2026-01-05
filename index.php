@@ -14,6 +14,7 @@ require_once __DIR__ . '/app/controllers/TicketController.php';
 require_once __DIR__ . '/app/controllers/AttachmentController.php';
 require_once __DIR__ . '/app/controllers/UserController.php';
 require_once __DIR__ . '/app/controllers/AvatarController.php';
+require_once __DIR__ . '/app/controllers/DashboardController.php';
 
 
 /* 2️⃣ ROUTE */
@@ -51,13 +52,19 @@ if ($route === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// DASHBOARDS (role-based)
-if ($route === 'admin/dashboard') {
-    Auth::requireRole(['admin', 'employee', 'staff']);
-    require __DIR__ . '/app/views/admin/dashboard.php';
+/* =========================
+   DASHBOARDS (role-based)
+   ========================= */
+
+// ADMIN dashboard (via controller -> provides $me)
+if ($route === 'admin/dashboard' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin','employee','staff']);
+    require_once __DIR__ . '/app/controllers/DashboardController.php';
+    (new DashboardController())->adminDashboard();
     exit;
 }
 
+// CLIENT dashboard
 if ($route === 'client/dashboard' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['client']);
     require_once __DIR__ . '/app/controllers/ClientController.php';
@@ -65,7 +72,10 @@ if ($route === 'client/dashboard' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// TASKS
+/* =========================
+   TASKS (internal)
+   ========================= */
+
 if ($route === 'tasks' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     (new TaskController())->index();
     exit;
@@ -96,7 +106,10 @@ if ($route === 'tasks-favorite' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// CHAT (momentan accesibil atât client cât și staff/admin)
+/* =========================
+   CHAT (temporar)
+   ========================= */
+
 if ($route === 'chat' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     (new ChatController())->index();
     exit;
@@ -112,7 +125,10 @@ if ($route === 'chat-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// TICKETS - CLIENT
+/* =========================
+   TICKETS - CLIENT
+   ========================= */
+
 if ($route === 'client/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['client']);
     (new TicketController())->clientIndex();
@@ -137,7 +153,10 @@ if ($route === 'client/ticket-message' && $_SERVER['REQUEST_METHOD'] === 'POST')
     exit;
 }
 
-// TICKETS - ADMIN/STAFF
+/* =========================
+   TICKETS - ADMIN/STAFF
+   ========================= */
+
 if ($route === 'admin/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin', 'employee', 'staff']);
     (new TicketController())->adminIndex();
@@ -162,10 +181,13 @@ if ($route === 'admin/ticket-status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ADMIN TABS
-if ($route === 'admin/internal-tasks') {
-    Auth::requireRole(['admin']);
-    header("Location: " . BASE_URL . "tasks"); // reuse tasks ca internal tasks
+/* =========================
+   ADMIN TABS / PAGES
+   ========================= */
+
+if ($route === 'admin/internal-tasks' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin','employee','staff']);
+    header("Location: " . BASE_URL . "tasks");
     exit;
 }
 
@@ -184,19 +206,17 @@ if ($route === 'admin/client' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($route === 'admin/settings' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    Auth::requireRole(['admin']);
-    require __DIR__ . '/app/views/admin/settings.php';
+    Auth::requireRole(['admin','employee','staff']);
+    require_once __DIR__ . '/app/controllers/DashboardController.php';
+    (new DashboardController())->settings();
     exit;
 }
 
-// ATTACHMENT DOWNLOAD (client + admin)
-if ($route === 'ticket-attachment' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    Auth::check();
-    (new AttachmentController())->download();
-    exit;
-}
 
-// ADMIN USERS
+/* =========================
+   ADMIN USERS
+   ========================= */
+
 if ($route === 'admin/users' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin']);
     (new UserController())->index();
@@ -215,7 +235,10 @@ if ($route === 'admin/users-invite' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// SET PASSWORD (invite link)
+/* =========================
+   INVITE: SET PASSWORD
+   ========================= */
+
 if ($route === 'set-password' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     (new UserController())->setPasswordForm();
     exit;
@@ -226,7 +249,11 @@ if ($route === 'set-password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// ADMIN: change own password (only admin)
+/* =========================
+   PASSWORD CHANGE
+   ========================= */
+
+// ADMIN: change own password
 if ($route === 'admin/change-password' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin']);
     require __DIR__ . '/app/views/admin/change_password.php';
@@ -239,33 +266,7 @@ if ($route === 'admin/change-password' && $_SERVER['REQUEST_METHOD'] === 'POST')
     exit;
 }
 
-// CLIENT: account page (profile + change password)
-if ($route === 'client/account' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    Auth::requireRole(['client']);
-    require __DIR__ . '/app/views/client/account.php';
-    exit;
-}
-
-if ($route === 'client/change-password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    Auth::requireRole(['client']);
-    (new AuthController())->changePassword();
-    exit;
-}
-
-// LOGOUT
-if ($route === 'logout') {
-    (new AuthController())->logout();
-    exit;
-}
-
-// CLIENT: account hub
-if ($route === 'client/account' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    Auth::requireRole(['client']);
-    require __DIR__ . '/app/views/client/account.php';
-    exit;
-}
-
-/// CLIENT: My Account (tabs page with profile + change password)
+// CLIENT: account (tabs page)
 if ($route === 'client/account' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['client']);
     require_once __DIR__ . '/app/controllers/ClientController.php';
@@ -273,7 +274,7 @@ if ($route === 'client/account' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// CLIENT: update profile (POST from Profile tab)
+// CLIENT: update profile
 if ($route === 'client/profile' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     Auth::requireRole(['client']);
     require_once __DIR__ . '/app/controllers/ClientController.php';
@@ -281,46 +282,72 @@ if ($route === 'client/profile' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// CLIENT: change password (POST from Change password tab)
+// CLIENT: change password
 if ($route === 'client/change-password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     Auth::requireRole(['client']);
     (new AuthController())->changePassword();
     exit;
 }
 
-// AVATAR (served via PHP - avoids direct /uploads access)
+/* =========================
+   DOWNLOADS + AVATAR
+   ========================= */
+
+// ATTACHMENT DOWNLOAD (client + admin)
+if ($route === 'ticket-attachment' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::check();
+    (new AttachmentController())->download();
+    exit;
+}
+
+// AVATAR (served via PHP)
 if ($route === 'avatar' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::check();
     (new AvatarController())->show();
     exit;
 }
 
-// CLIENT: list tickets
-if ($route === 'client/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    Auth::requireRole(['client']);
-    (new TicketController())->clientIndex();
+/* =========================
+   LOGOUT
+   ========================= */
+
+if ($route === 'logout' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new AuthController())->logout();
     exit;
 }
 
-// CLIENT: create ticket
-if ($route === 'client/tickets-create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    Auth::requireRole(['client']);
-    (new TicketController())->clientStore();
+
+// salvarea profilului admin
+if ($route === 'admin/profile' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin','employee','staff']);
+    require_once __DIR__ . '/app/controllers/DashboardController.php';
+    (new DashboardController())->updateProfile();
     exit;
 }
 
-// CLIENT: show single ticket
-if ($route === 'client/ticket' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    Auth::requireRole(['client']);
-    (new TicketController())->clientShow();
+// admin/users-disable
+if ($route === 'admin/users-disable' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin']);
+    (new UserController())->disable();
     exit;
 }
 
-// CLIENT: add message to ticket
-if ($route === 'client/ticket-message' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    Auth::requireRole(['client']);
-    (new TicketController())->clientAddMessage();
+// ADMIN: disable client (soft delete)
+if ($route === 'admin/client-disable' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin']);
+    require_once __DIR__ . '/app/controllers/ClientController.php';
+    (new ClientController())->disable();
     exit;
 }
+
+// CLIENT: self delete
+if ($route === 'client/delete-account' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['client']);
+    require_once __DIR__ . '/app/controllers/ClientController.php';
+    (new ClientController())->deleteOwnAccount();
+    exit;
+}
+
 
 
 
