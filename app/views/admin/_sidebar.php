@@ -7,28 +7,6 @@ function active($needle, $current) {
 }
 ?>
 
-<style>
-  .nav-item {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-  }
-  .badge {
-    display:none;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 7px;
-    border-radius: 999px;
-    font-size: 12px;
-    line-height: 22px;
-    text-align:center;
-    font-weight: 700;
-    background: #111;
-    color: #fff;
-  }
-</style>
-
 <aside class="sidebar">
   <a class="nav-item <?= active('admin/dashboard', $current) ?>" href="<?= BASE_URL ?>admin/dashboard">
     <span>🏠 Dashboard</span>

@@ -19,67 +19,104 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
 }
 ?>
 
-<div class="tickets-header" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-  <h2 style="margin:0;">Tickets Inbox</h2>
+<div class="tickets-header">
+  <h2 class="tickets-title">Tickets Inbox</h2>
 
-  <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets') ?>" style="display:flex; gap:8px; align-items:center;">
+  <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets') ?>" class="tickets-search">
     <?php if ($isRouteMode): ?>
       <input type="hidden" name="route" value="admin/tickets">
     <?php endif; ?>
     <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
+
     <input
       type="search"
       name="q"
       placeholder="Caută după nume tichet / client..."
       value="<?= htmlspecialchars($q) ?>"
-      style="min-width:260px; padding:10px 12px; border:1px solid #ddd; border-radius:10px;" />
+    />
     <button class="btn" type="submit">Caută</button>
   </form>
 </div>
 
-<div class="tickets-tabs" style="display:flex; gap:10px; margin:16px 0 14px;">
+<div class="tickets-tabs">
   <a class="btn <?= $tab === 'open' ? 'btn-primary' : '' ?>" href="<?= htmlspecialchars(ticketsTabUrl('open', $q, $paramSep)) ?>">Tichete noi</a>
   <a class="btn <?= $tab === 'resolved' ? 'btn-primary' : '' ?>" href="<?= htmlspecialchars(ticketsTabUrl('resolved', $q, $paramSep)) ?>">Tichete rezolvate</a>
   <a class="btn <?= $tab === 'deleted' ? 'btn-primary' : '' ?>" href="<?= htmlspecialchars(ticketsTabUrl('deleted', $q, $paramSep)) ?>">Șterse</a>
 </div>
 
-<div id="ticketsLiveBar" style="display:none; margin:10px 0; padding:10px 12px; border:1px solid #ffd79a; background:#fff7e8; border-radius:10px;">
+<div id="ticketsLiveBar" class="tickets-livebar">
   Au apărut tichete noi. <button class="btn" id="reloadTicketsBtn" type="button">Reîncarcă</button>
 </div>
 
+<!-- Toolbar deasupra tabelului (dreapta) -->
+<div class="tickets-toolbar">
+  <button id="openExportModal" class="btn" type="button">Export</button>
+</div>
 
-<!-- UN SINGUR FORM (fără nested forms) -->
+<!-- Modal export (lightbox) -->
+<div id="exportModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Export tichete">
+    <div class="modal-header">
+      <h3>Export tichete (CSV)</h3>
+      <button id="closeExportModal" class="btn" type="button">Închide</button>
+    </div>
+
+    <p>Exportă tichetele din tabul curent sau aplică filtre suplimentare.</p>
+
+    <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets-export') ?>" class="modal-form">
+      <?php if ($isRouteMode): ?>
+        <input type="hidden" name="route" value="admin/tickets-export">
+      <?php endif; ?>
+
+      <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
+      <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
+
+      <input name="id" type="text" placeholder="ID (exact)">
+      <input name="subject" type="text" placeholder="Nume tichet">
+
+      <input name="client" type="text" placeholder="Client">
+      <select name="status">
+        <option value="">Status (toate)</option>
+        <option value="open">open</option>
+        <option value="resolved">resolved</option>
+        <option value="deleted">deleted</option>
+      </select>
+
+      <div class="modal-actions">
+        <button class="btn" type="button" id="exportModalCancel">Anulează</button>
+        <button class="btn btn-primary" type="submit">Descarcă CSV</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <form id="bulkForm" method="POST" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets-bulk-delete') ?>">
   <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
   <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
 
-  <button id="bulkDeleteBtn" class="btn" type="submit" style="display:none; margin: 6px 0 10px;"
+  <button id="bulkDeleteBtn" class="btn bulk-delete-btn" type="submit"
     onclick="return confirm('Ștergi tichetele selectate?')">
     Șterge tichetele selectate
   </button>
 
-  <table id="ticketsTable" border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+  <table id="ticketsTable" class="tickets-table">
     <thead>
       <tr>
-        <th style="width:40px;">⇅</th>
-        <th style="width:36px;"><input id="checkAll" type="checkbox" /></th>
-        <th style="width:70px;">ID</th>
+        <th class="col-drag">⇅</th>
+        <th class="col-check"><input id="checkAll" type="checkbox" /></th>
+        <th class="col-id">ID</th>
         <th>Client</th>
         <th>Subject</th>
-        <th style="width:110px;">Status</th>
+        <th class="col-status">Status</th>
         <th>Ultimul mesaj</th>
-        <th style="width:170px;">Updated</th>
-        <th style="width:220px;">Acțiuni</th>
+        <th class="col-updated">Updated</th>
+        <th class="col-actions">Acțiuni</th>
       </tr>
     </thead>
     <tbody>
       <?php foreach ($tickets as $t): ?>
         <tr data-ticket-id="<?= (int)$t['id'] ?>">
-          <!-- Drag handle -->
-          <td class="drag-handle" draggable="true" title="Trage ca să reordonezi"
-            style="cursor:grab; user-select:none; text-align:center; font-size:18px;">
-            ⋮⋮
-          </td>
+          <td class="drag-handle" draggable="true" title="Trage ca să reordonezi">⋮⋮</td>
 
           <td>
             <input class="rowCheck" type="checkbox" name="ticket_ids[]" value="<?= (int)$t['id'] ?>" />
@@ -95,11 +132,10 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
           <td><?= htmlspecialchars($t['last_public_message'] ?? '') ?></td>
           <td><?= htmlspecialchars($t['updated_at'] ?? '') ?></td>
 
-          <td style="white-space:nowrap;">
+          <td class="col-actions">
             <a class="btn" href="<?= htmlspecialchars(BASE_URL . 'admin/ticket' . $idSep . (int)$t['id']) ?>">Deschide</a>
 
             <?php if ($tab !== 'deleted'): ?>
-              <!-- DELETE: buton care trimite acest form către alt endpoint -->
               <button
                 class="btn"
                 type="submit"
@@ -111,7 +147,6 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
                 Șterge
               </button>
             <?php else: ?>
-              <!-- RESTORE -->
               <button
                 class="btn"
                 type="submit"
@@ -169,10 +204,8 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
 
   tbody?.addEventListener('dragstart', (e) => {
     if (!e.target.classList.contains('drag-handle')) return;
-
     const tr = e.target.closest('tr');
     if (!tr) return;
-
     dragged = tr;
     e.dataTransfer.effectAllowed = 'move';
   });
@@ -180,10 +213,8 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
   tbody?.addEventListener('dragover', (e) => {
     if (!dragged) return;
     e.preventDefault();
-
     const tr = e.target.closest('tr');
     if (!tr || tr === dragged) return;
-
     const rect = tr.getBoundingClientRect();
     const next = (e.clientY - rect.top) > (rect.height / 2);
     tbody.insertBefore(dragged, next ? tr.nextSibling : tr);
@@ -192,7 +223,6 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
   tbody?.addEventListener('drop', (e) => {
     if (!dragged) return;
     e.preventDefault();
-
     dragged = null;
     postReorder();
   });
@@ -201,29 +231,24 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
     dragged = null;
   });
 
-// Notificare tichete noi
+  // Notificare tichete noi
   let lastOpenCount = null;
   let lastLatest = null;
 
   const liveBar = document.getElementById('ticketsLiveBar');
   const reloadBtn = document.getElementById('reloadTicketsBtn');
-
   reloadBtn?.addEventListener('click', () => location.reload());
 
   async function pollTickets() {
     try {
-      const res = await fetch('<?= htmlspecialchars(BASE_URL . "admin/tickets-poll") ?>', {
-        credentials: 'same-origin'
-      });
+      const res = await fetch('<?= htmlspecialchars(BASE_URL . "admin/tickets-poll") ?>', { credentials: 'same-origin' });
       if (!res.ok) return;
 
       const data = await res.json();
-
       if (lastOpenCount === null) lastOpenCount = data.open_count;
       if (lastLatest === null) lastLatest = data.latest_updated_at;
 
       const changed = (data.open_count !== lastOpenCount) || (data.latest_updated_at !== lastLatest);
-
       if (changed) {
         liveBar.style.display = 'block';
         document.title = `Tickets (${data.open_count} noi)`;
@@ -231,8 +256,36 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
     } catch (e) {}
   }
 
-  setInterval(pollTickets, 15000); // la 15 sec
+  setInterval(pollTickets, 15000);
   pollTickets();
+
+  // Modal export (lightbox)
+  const exportModal = document.getElementById('exportModal');
+  const openExportModal = document.getElementById('openExportModal');
+  const closeExportModal = document.getElementById('closeExportModal');
+  const exportModalCancel = document.getElementById('exportModalCancel');
+
+  function openModal() {
+    exportModal.classList.add('is-open');
+    exportModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    exportModal.classList.remove('is-open');
+    exportModal.setAttribute('aria-hidden', 'true');
+  }
+
+  openExportModal?.addEventListener('click', openModal);
+  closeExportModal?.addEventListener('click', closeModal);
+  exportModalCancel?.addEventListener('click', closeModal);
+
+  exportModal?.addEventListener('click', (e) => {
+    if (e.target === exportModal) closeModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
 </script>
 
 <?php require __DIR__ . '/../_layout_end.php'; ?>

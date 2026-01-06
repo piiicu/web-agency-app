@@ -169,6 +169,13 @@ if ($route === 'admin/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+if ($route === 'admin/tickets-export' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminExport();
+    exit;
+}
+
+
 /**
  * ✅ NEW: lightweight polling endpoint (auto-refresh counter + latest update)
  */

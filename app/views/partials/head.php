@@ -14,10 +14,8 @@
   <!-- Role-specific -->
   <?php if (class_exists('Auth') && Auth::check() && Auth::role() === 'client'): ?>
     <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css">
-  <?php endif; ?>
-
-  <?php if (class_exists('Auth') && Auth::check() && Auth::role() !== 'client'): ?>
-    <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/admin.css">
+  <?php else: ?>
+    <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css">
   <?php endif; ?>
 </head>
 <body>
