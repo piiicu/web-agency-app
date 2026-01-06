@@ -36,10 +36,13 @@ class TicketController
         $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, body, is_internal) VALUES (?, ?, ?, 0)");
         $stmt->execute([$ticketId, $clientId, $message]);
 
+        // upload attachments (optional)
+        if (method_exists($this, 'handleAttachments')) {
+            $this->handleAttachments($ticketId);
+        }
+
         header("Location: " . BASE_URL . "client/ticket&id=" . $ticketId);
         exit;
-
-        $this->handleAttachments($ticketId);
     }
 
     // CLIENT: show ticket (only own)
@@ -133,8 +136,6 @@ class TicketController
         ");
         $stmt->execute([$ticketId, $clientId, $body]);
 
-        $stmt->execute([$ticketId, $clientId, $body]);
-
         // upload attachments (if you added handleAttachments() in TicketController)
         if (method_exists($this, 'handleAttachments')) {
             $this->handleAttachments($ticketId);
@@ -156,15 +157,47 @@ class TicketController
     {
         global $pdo;
 
+        // Tabs: open | resolved | deleted
+        $tab = (string)($_GET['tab'] ?? 'open');
+        if (!in_array($tab, ['open', 'resolved', 'deleted'], true)) {
+            $tab = 'open';
+        }
+
+        // Search by subject (and client name)
+        $q = trim((string)($_GET['q'] ?? ''));
+
+        $where = [];
+        $params = [];
+
+        if ($tab === 'deleted') {
+            $where[] = 't.deleted_at IS NOT NULL';
+        } else {
+            $where[] = 't.deleted_at IS NULL';
+            $where[] = 't.status = ?';
+            $params[] = $tab; // open / resolved
+        }
+
+        if ($q !== '') {
+            $where[] = '(t.subject LIKE ? OR u.name LIKE ?)';
+            $params[] = '%' . $q . '%';
+            $params[] = '%' . $q . '%';
+        }
+
+        $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
         $sql = "
           SELECT t.*,
                  u.name AS client_name,
                  (SELECT body FROM ticket_messages tm WHERE tm.ticket_id=t.id AND tm.is_internal=0 ORDER BY tm.id DESC LIMIT 1) AS last_public_message
           FROM tickets t
           JOIN users u ON u.id = t.client_id
-          ORDER BY t.updated_at DESC, t.id DESC
+          $whereSql
+          ORDER BY t.sort_order ASC, t.updated_at DESC, t.id DESC
         ";
-        $tickets = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../views/admin/tickets/index.php';
     }
@@ -199,6 +232,16 @@ class TicketController
         ");
         $stmt->execute([$ticketId]);
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Attachments (admin can see all; download route should still enforce access)
+        $stmt = $pdo->prepare("
+            SELECT id, original_name, created_at
+            FROM ticket_attachments
+            WHERE ticket_id = ?
+            ORDER BY id ASC
+        ");
+        $stmt->execute([$ticketId]);
+        $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         require __DIR__ . '/../views/admin/tickets/show.php';
     }
@@ -235,7 +278,8 @@ class TicketController
         $ticketId = (int)($_POST['ticket_id'] ?? 0);
         $status = (string)($_POST['status'] ?? 'open');
 
-        $allowed = ['open', 'in_progress', 'resolved', 'closed'];
+        // Only these 2 states are supported in UI
+        $allowed = ['open', 'resolved'];
         if ($ticketId <= 0 || !in_array($status, $allowed, true)) {
             header("Location: " . BASE_URL . "admin/tickets");
             exit;
@@ -246,6 +290,106 @@ class TicketController
 
         header("Location: " . BASE_URL . "admin/ticket&id=" . $ticketId);
         exit;
+    }
+
+    // ADMIN: soft delete (moves ticket to Deleted tab)
+    public function adminDelete()
+    {
+        global $pdo;
+        $ticketId = (int)($_POST['ticket_id'] ?? 0);
+        if ($ticketId <= 0) {
+            header("Location: " . BASE_URL . "admin/tickets");
+            exit;
+        }
+
+        $pdo->prepare("UPDATE tickets SET deleted_at = NOW(), updated_at = NOW() WHERE id = ?")
+            ->execute([$ticketId]);
+
+        header("Location: " . BASE_URL . "admin/tickets");
+        exit;
+    }
+
+    // ADMIN: restore from Deleted tab
+    public function adminRestore()
+    {
+        global $pdo;
+        $ticketId = (int)($_POST['ticket_id'] ?? 0);
+        if ($ticketId <= 0) {
+            header("Location: " . BASE_URL . "admin/tickets");
+            exit;
+        }
+
+        $pdo->prepare("UPDATE tickets SET deleted_at = NULL, updated_at = NOW() WHERE id = ?")
+            ->execute([$ticketId]);
+
+        header("Location: " . BASE_URL . "admin/tickets&tab=deleted");
+        exit;
+    }
+
+    // ADMIN: bulk soft delete
+    public function adminBulkDelete()
+    {
+        global $pdo;
+        $ids = $_POST['ticket_ids'] ?? [];
+        if (!is_array($ids) || count($ids) === 0) {
+            header("Location: " . BASE_URL . "admin/tickets");
+            exit;
+        }
+
+        $clean = array_values(array_filter(array_map('intval', $ids), fn($v) => $v > 0));
+        if (!$clean) {
+            header("Location: " . BASE_URL . "admin/tickets");
+            exit;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($clean), '?'));
+        $stmt = $pdo->prepare("UPDATE tickets SET deleted_at = NOW(), updated_at = NOW() WHERE id IN ($placeholders)");
+        $stmt->execute($clean);
+
+        $tab = (string)($_POST['tab'] ?? 'open');
+        if (!in_array($tab, ['open', 'resolved', 'deleted'], true)) $tab = 'open';
+        $q = trim((string)($_POST['q'] ?? ''));
+        $redir = BASE_URL . 'admin/tickets&tab=' . urlencode($tab);
+        if ($q !== '') $redir .= '&q=' . urlencode($q);
+
+        header("Location: " . $redir);
+        exit;
+    }
+
+    // ADMIN: reorder tickets within the current tab
+    public function adminReorder()
+    {
+        global $pdo;
+
+        header('Content-Type: application/json');
+
+        $ids = $_POST['order'] ?? [];
+        if (!is_array($ids) || count($ids) === 0) {
+            echo json_encode(['ok' => false, 'error' => 'Missing order']);
+            return;
+        }
+
+        $clean = array_values(array_filter(array_map('intval', $ids), fn($v) => $v > 0));
+        if (!$clean) {
+            echo json_encode(['ok' => false, 'error' => 'Bad ids']);
+            return;
+        }
+
+        // Use a transaction for consistent ordering
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare("UPDATE tickets SET sort_order = ? WHERE id = ?");
+            $i = 1;
+            foreach ($clean as $id) {
+                $stmt->execute([$i, $id]);
+                $i++;
+            }
+            $pdo->commit();
+            echo json_encode(['ok' => true]);
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            echo json_encode(['ok' => false, 'error' => 'DB error']);
+        }
     }
 
     // attachament
@@ -292,4 +436,38 @@ class TicketController
             $stmt->execute([$ticketId, $userId, $original, $stored, $mime, (int)$sizes[$i]]);
         }
     }
+
+    // refresh
+    public function adminPoll()
+{
+    header('Content-Type: application/json; charset=utf-8');
+
+    global $pdo;
+
+    // Count open tickets (not deleted)
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS c
+        FROM tickets
+        WHERE status = 'open'
+          AND deleted_at IS NULL
+    ");
+    $stmt->execute();
+    $openCount = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+
+    // Latest update timestamp
+    $stmt2 = $pdo->prepare("
+        SELECT MAX(updated_at) AS m
+        FROM tickets
+        WHERE deleted_at IS NULL
+    ");
+    $stmt2->execute();
+    $latest = $stmt2->fetch(PDO::FETCH_ASSOC)['m'] ?? null;
+
+    echo json_encode([
+        'open_count' => $openCount,
+        'latest_updated_at' => $latest,
+    ]);
+    exit;
+}
+
 }

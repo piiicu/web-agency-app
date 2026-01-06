@@ -28,6 +28,12 @@ $protected = [
     'admin/dashboard',
     'client/dashboard',
     'ticket-attachment',
+
+    // tickets protected (cleaner)
+    'client/tickets', 'client/ticket',
+    'admin/tickets', 'admin/ticket',
+    'admin/tickets-poll',
+    'admin/badges-poll',
 ];
 
 if (in_array($route, $protected, true) && !isset($_SESSION['user'])) {
@@ -163,6 +169,22 @@ if ($route === 'admin/tickets' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+/**
+ * ✅ NEW: lightweight polling endpoint (auto-refresh counter + latest update)
+ */
+if ($route === 'admin/tickets-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminPoll();
+    exit;
+}
+
+if ($route === 'admin/badges-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new DashboardController())->badgesPoll();
+    exit;
+}
+
+
 if ($route === 'admin/ticket' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin', 'employee', 'staff']);
     (new TicketController())->adminShow();
@@ -178,6 +200,30 @@ if ($route === 'admin/ticket-message' && $_SERVER['REQUEST_METHOD'] === 'POST') 
 if ($route === 'admin/ticket-status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     Auth::requireRole(['admin', 'employee', 'staff']);
     (new TicketController())->adminUpdateStatus();
+    exit;
+}
+
+if ($route === 'admin/ticket-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminDelete();
+    exit;
+}
+
+if ($route === 'admin/ticket-restore' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminRestore();
+    exit;
+}
+
+if ($route === 'admin/tickets-bulk-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminBulkDelete();
+    exit;
+}
+
+if ($route === 'admin/tickets-reorder' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    Auth::requireRole(['admin', 'employee', 'staff']);
+    (new TicketController())->adminReorder();
     exit;
 }
 
@@ -347,11 +393,6 @@ if ($route === 'client/delete-account' && $_SERVER['REQUEST_METHOD'] === 'POST')
     (new ClientController())->deleteOwnAccount();
     exit;
 }
-
-
-
-
-
 
 
 /* 5️⃣ ROUTE SIMPLE → VIEWS */

@@ -6,7 +6,7 @@ class DashboardController
     {
         global $pdo;
 
-        Auth::requireRole(['admin','employee','staff']);
+        Auth::requireRole(['admin', 'employee', 'staff']);
 
         $userId = Auth::id();
         $stmt = $pdo->prepare("SELECT id, name, email, phone, avatar, role FROM users WHERE id=? LIMIT 1");
@@ -25,7 +25,7 @@ class DashboardController
     {
         global $pdo;
 
-        Auth::requireRole(['admin','employee','staff']);
+        Auth::requireRole(['admin', 'employee', 'staff']);
 
         $userId = Auth::id();
         $stmt = $pdo->prepare("SELECT id, name, email, phone, avatar FROM users WHERE id=? LIMIT 1");
@@ -44,7 +44,7 @@ class DashboardController
     {
         global $pdo;
 
-        Auth::requireRole(['admin','employee','staff']);
+        Auth::requireRole(['admin', 'employee', 'staff']);
 
         $userId = Auth::id();
 
@@ -103,6 +103,62 @@ class DashboardController
 
         $_SESSION['flash_success'] = 'Profil actualizat.';
         header("Location: " . BASE_URL . "admin/settings#profile");
+        exit;
+    }
+
+    public function badgesPoll()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        global $pdo;
+
+        // 1) Tickets: open + not deleted
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS c
+        FROM tickets
+        WHERE status = 'open'
+          AND deleted_at IS NULL
+        ");
+        $stmt->execute();
+        $ticketsOpen = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+
+        // 2) Tasks: pending
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS c
+        FROM tasks
+        WHERE status = 'pending'
+        ");
+        $stmt->execute();
+        $tasksPending = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+
+        // 3) Chat: "new messages" since last seen (session-based)
+        $stmt = $pdo->prepare("SELECT MAX(id) AS m FROM messages");
+        $stmt->execute();
+        $maxMsgId = (int)($stmt->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+
+        if (!isset($_SESSION['chat_last_seen_id'])) {
+            // prima dată când userul intră în admin: nu-l spamăm cu "mesaje noi" vechi
+            $_SESSION['chat_last_seen_id'] = $maxMsgId;
+            $chatNew = 0;
+        } else {
+            $lastSeen = (int)$_SESSION['chat_last_seen_id'];
+            $me = (int)Auth::id();
+
+            $stmt = $pdo->prepare("
+            SELECT COUNT(*) AS c
+            FROM messages
+            WHERE id > :lastSeen
+              AND user_id <> :me
+        ");
+            $stmt->execute(['lastSeen' => $lastSeen, 'me' => $me]);
+            $chatNew = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+        }
+
+        echo json_encode([
+            'tickets_open'  => $ticketsOpen,
+            'tasks_pending' => $tasksPending,
+            'chat_new'      => $chatNew,
+        ]);
         exit;
     }
 }

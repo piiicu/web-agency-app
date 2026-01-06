@@ -9,7 +9,7 @@
   <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
   <label>Status:</label>
   <select name="status">
-    <?php foreach (['open','in_progress','resolved','closed'] as $s): ?>
+    <?php foreach (['open','resolved'] as $s): ?>
       <option value="<?= $s ?>" <?= $ticket['status'] === $s ? 'selected' : '' ?>>
         <?= $s ?>
       </option>

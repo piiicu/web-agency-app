@@ -6,12 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Web Agency App</title>
 
-  <!-- General + Admin CSS -->
-  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css">
+  <!-- Shared CSS -->
+  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/base.css">
+  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/components.css">
+  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/layout.css">
 
-  <!-- Client-only overrides -->
+  <!-- Role-specific -->
   <?php if (class_exists('Auth') && Auth::check() && Auth::role() === 'client'): ?>
     <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css">
+  <?php endif; ?>
+
+  <?php if (class_exists('Auth') && Auth::check() && Auth::role() !== 'client'): ?>
+    <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/admin.css">
   <?php endif; ?>
 </head>
 <body>

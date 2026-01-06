@@ -1,0 +1,93 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+/* BODY */
+body {
+  background: #0f172a;
+  color: #e5e7eb;
+  min-height: 100vh;
+  padding: 40px;
+}
+
+/* LINKS */
+a {
+  color: #38bdf8;
+  text-decoration: none;
+  margin-right: 15px;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* HEADERS */
+h1, h2 {
+  margin-bottom: 20px;
+}
+
+/* FORM */
+form {
+  max-width: 350px;
+  margin: auto;
+  background: #020617;
+  padding: 30px;
+  border-radius: 8px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: none;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #38bdf8;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0ea5e9;
+}
+
+/* NAV */
+nav {
+  margin-bottom: 30px;
+}
+
+/* CHAT */
+#messages {
+  background: #020617;
+  padding: 20px;
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  border-radius: 8px;
+}
+
+#messages p {
+  margin-bottom: 8px;
+}
+
+/* TASKS */
+ul {
+  list-style: none;
+}
+
+li {
+  background: #020617;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+}
