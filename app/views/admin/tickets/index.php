@@ -21,7 +21,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
 
 <div class="tickets-header">
   <h2 class="tickets-title">Tickets Inbox</h2>
-
+<!-- Search -->
   <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets') ?>" class="tickets-search">
     <?php if ($isRouteMode): ?>
       <input type="hidden" name="route" value="admin/tickets">
@@ -43,7 +43,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
   <a class="btn <?= $tab === 'resolved' ? 'btn-primary' : '' ?>" href="<?= htmlspecialchars(ticketsTabUrl('resolved', $q, $paramSep)) ?>">Tichete rezolvate</a>
   <a class="btn <?= $tab === 'deleted' ? 'btn-primary' : '' ?>" href="<?= htmlspecialchars(ticketsTabUrl('deleted', $q, $paramSep)) ?>">Șterse</a>
 </div>
-
+<!-- Notificare tichete noi -->
 <div id="ticketsLiveBar" class="tickets-livebar">
   Au apărut tichete noi. <button class="btn" id="reloadTicketsBtn" type="button">Reîncarcă</button>
 </div>
@@ -110,7 +110,6 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
         <th class="col-status">Status</th>
         <th>Ultimul mesaj</th>
         <th class="col-updated">Updated</th>
-        <th class="col-actions">Acțiuni</th>
       </tr>
     </thead>
     <tbody>
@@ -127,37 +126,39 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
           </td>
 
           <td><?= htmlspecialchars($t['client_name']) ?></td>
-          <td><?= htmlspecialchars($t['subject']) ?></td>
+          <td class="ticket-subject-cell">
+            <?= htmlspecialchars($t['subject']) ?>
+
+            <div class="ticket-actions">
+              <a class="btn" href="<?= htmlspecialchars(BASE_URL . 'admin/ticket' . $idSep . (int)$t['id']) ?>">Deschide</a>
+
+              <?php if ($tab !== 'deleted'): ?>
+                <button
+                  class="btn"
+                  type="submit"
+                  name="ticket_id"
+                  value="<?= (int)$t['id'] ?>"
+                  formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-delete') ?>"
+                  formmethod="post"
+                  onclick="return confirm('Ștergi tichetul #<?= (int)$t['id'] ?>?')">
+                  Șterge
+                </button>
+              <?php else: ?>
+                <button
+                  class="btn"
+                  type="submit"
+                  name="ticket_id"
+                  value="<?= (int)$t['id'] ?>"
+                  formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-restore') ?>"
+                  formmethod="post">
+                  Restore
+                </button>
+              <?php endif; ?>
+            </div>
+          </td>
           <td><?= htmlspecialchars($t['status']) ?></td>
           <td><?= htmlspecialchars($t['last_public_message'] ?? '') ?></td>
           <td><?= htmlspecialchars($t['updated_at'] ?? '') ?></td>
-
-          <td class="col-actions">
-            <a class="btn" href="<?= htmlspecialchars(BASE_URL . 'admin/ticket' . $idSep . (int)$t['id']) ?>">Deschide</a>
-
-            <?php if ($tab !== 'deleted'): ?>
-              <button
-                class="btn"
-                type="submit"
-                name="ticket_id"
-                value="<?= (int)$t['id'] ?>"
-                formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-delete') ?>"
-                formmethod="post"
-                onclick="return confirm('Ștergi tichetul #<?= (int)$t['id'] ?>?')">
-                Șterge
-              </button>
-            <?php else: ?>
-              <button
-                class="btn"
-                type="submit"
-                name="ticket_id"
-                value="<?= (int)$t['id'] ?>"
-                formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-restore') ?>"
-                formmethod="post">
-                Restore
-              </button>
-            <?php endif; ?>
-          </td>
         </tr>
       <?php endforeach; ?>
     </tbody>
@@ -245,13 +246,20 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
       if (!res.ok) return;
 
       const data = await res.json();
-      if (lastOpenCount === null) lastOpenCount = data.open_count;
-      if (lastLatest === null) lastLatest = data.latest_updated_at;
+      // prima rulare: inițializează baseline și NU afișa notificarea
+      if (lastOpenCount === null || lastLatest === null) {
+        lastOpenCount = data.open_count;
+        lastLatest = data.latest_updated_at;
+        liveBar.style.display = 'none';
+        return;
+      }
 
       const changed = (data.open_count !== lastOpenCount) || (data.latest_updated_at !== lastLatest);
       if (changed) {
         liveBar.style.display = 'block';
         document.title = `Tickets (${data.open_count} noi)`;
+      } else {
+        liveBar.style.display = 'none';
       }
     } catch (e) {}
   }

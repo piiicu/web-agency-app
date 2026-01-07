@@ -6,12 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Web Agency App</title>
 
-  <!-- Shared CSS -->
-  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/base.css">
-  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/components.css">
-  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/layout.css">
-
-  <!-- Role-specific -->
+  <!-- CSS (în proiect există doar: assets/css/app.css + assets/css/client.css) -->
   <?php if (class_exists('Auth') && Auth::check() && Auth::role() === 'client'): ?>
     <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css">
   <?php else: ?>
