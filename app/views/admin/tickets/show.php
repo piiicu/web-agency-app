@@ -35,7 +35,16 @@
 
 <hr>
 
-<h3>Add message</h3>
+<div class="ticket-compose-header">
+  <h3>Scrie mesajul</h3>
+
+  <?php if (!empty($attachments)): ?>
+    <button type="button" class="btn btn--secondary js-open-media" data-target="#mediaModal">
+      📎 Media, links and docs (<?= count($attachments) ?>)
+    </button>
+  <?php endif; ?>
+</div>
+
 <form method="POST" action="<?= BASE_URL ?>admin/ticket-message" enctype="multipart/form-data">
   <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
   <textarea name="body" placeholder="Write message / internal note..." style="width: 70%; height: 120px;" required></textarea>
@@ -63,6 +72,60 @@
     <?php endforeach; ?>
   </ul>
 <?php endif; ?>
+
+<!-- Popup atasamente -->
+<?php if (!empty($attachments)): ?>
+<div class="media-modal" id="mediaModal" aria-hidden="true">
+  <div class="media-modal__backdrop js-close-media" data-target="#mediaModal"></div>
+
+  <div class="media-modal__panel" role="dialog" aria-modal="true">
+    <div class="media-modal__top">
+      <div class="media-modal__title">Media, links and docs</div>
+      <button type="button" class="media-modal__close js-close-media" data-target="#mediaModal">✕</button>
+    </div>
+
+    <div class="media-tabs">
+      <button type="button" class="media-tab is-active" data-filter="all">All</button>
+      <button type="button" class="media-tab" data-filter="images">Media</button>
+      <button type="button" class="media-tab" data-filter="pdf">Docs</button>
+    </div>
+
+    <div class="media-grid">
+      <?php foreach ($attachments as $a): ?>
+        <?php
+          $id = (int)$a['id'];
+          $name = htmlspecialchars($a['original_name']);
+          $mime = $a['mime_type'] ?? '';
+          $isImg = is_string($mime) && str_starts_with($mime, 'image/');
+          $isPdf = ($mime === 'application/pdf');
+          $typeClass = $isImg ? 'images' : ($isPdf ? 'pdf' : 'other');
+          $previewUrl = BASE_URL . "ticket-attachment&id={$id}&inline=1";
+          $downloadUrl = BASE_URL . "ticket-attachment&id={$id}&download=1";
+        ?>
+
+        <div class="media-item" data-type="<?= $typeClass ?>">
+          <a class="media-item__preview" href="<?= $previewUrl ?>" target="_blank" rel="noopener">
+            <?php if ($isImg): ?>
+              <img src="<?= $previewUrl ?>" alt="<?= $name ?>">
+            <?php elseif ($isPdf): ?>
+              <div class="media-doc">📄 PDF</div>
+            <?php else: ?>
+              <div class="media-doc">📎 FILE</div>
+            <?php endif; ?>
+          </a>
+
+          <div class="media-item__meta" title="<?= $name ?>"><?= $name ?></div>
+
+          <a class="media-item__download" href="<?= $downloadUrl ?>" title="Descarcă">⬇</a>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+  </div>
+</div>
+<?php endif; ?>
+
+
 <?php require __DIR__ . '/../_layout_end.php'; ?>
 
 

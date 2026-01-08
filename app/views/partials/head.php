@@ -6,11 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Web Agency App</title>
 
-  <!-- CSS (în proiect există doar: assets/css/app.css + assets/css/client.css) -->
+  <!-- CSS: load global styles everywhere, and add client overrides for client role -->
+  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css">
   <?php if (class_exists('Auth') && Auth::check() && Auth::role() === 'client'): ?>
     <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css">
-  <?php else: ?>
-    <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css">
   <?php endif; ?>
 </head>
 <body>

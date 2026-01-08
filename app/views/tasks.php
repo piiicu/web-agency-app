@@ -6,24 +6,30 @@ $q       = $_GET['q'] ?? '';        // search pentru De făcut
 $q_done  = $_GET['q_done'] ?? '';   // search pentru Rezolvate
 $tab     = $_GET['tab'] ?? 'pending'; // pending | done
 
-// Helper: construiește URL la /tasks cu parametrii doriți (fără erori)
-function tasks_url($params = []) {
+// Helper: construiește URL la /tasks cu parametrii doriți (corect pt BASE_URL cu ?route=)
+function tasks_url(array $params = []): string {
     $base = BASE_URL . 'tasks';
+
     if (!$params) return $base;
-    return $base . '?' . http_build_query($params);
+
+    // dacă BASE_URL conține deja "?" (ex: .../?route=), adăugăm parametrii cu "&"
+    $sep = (strpos($base, '?') !== false) ? '&' : '?';
+
+    return $base . $sep . http_build_query($params);
 }
+
 ?>
 
 <?php require __DIR__ . '/partials/head.php'; ?>
 <div class="container">
 
-<h2>Internal Tasks</h2>
-
 <div class="layout">
   <?php require __DIR__ . '/admin/_sidebar.php'; ?>
 
   <main class="content">
-
+    <div class="page-header">
+          <h2>Internal Tasks</h2>
+    </div>
     <!-- Formular adăugare task -->
     <form method="POST" action="<?= BASE_URL ?>tasks" style="margin-bottom:15px;">
         <input class="input" type="text" name="title" placeholder="Task nou" required>
@@ -200,7 +206,6 @@ function tasks_url($params = []) {
     </div>
 
     <script>const BASE_URL = "<?= BASE_URL ?>";</script>
-    <script src="<?= ASSET_URL ?>public/assets/js/app.js"></script>
 
   </main>
 </div>

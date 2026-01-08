@@ -155,7 +155,16 @@
             </div>
         <?php else: ?>
             <div class="reply">
-                <h3 style="margin-top:0;">Răspuns nou</h3>
+                <div class="ticket-compose-header">
+                    <h3 style="margin-top:0;">Răspuns nou</h3>
+
+                    <?php if (!empty($attachments)): ?>
+                        <button type="button" class="btn btn--secondary js-open-media" data-target="#mediaModal">
+                            📎 Media, links and docs (<?= count($attachments) ?>)
+                        </button>
+                    <?php endif; ?>
+                </div>
+
 
                 <form method="POST" action="<?= BASE_URL ?>client/ticket-message" enctype="multipart/form-data">
                     <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
