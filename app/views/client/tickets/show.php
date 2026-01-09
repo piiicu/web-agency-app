@@ -159,10 +159,8 @@
                     <h3 style="margin-top:0;">Răspuns nou</h3>
 
                     <?php if (!empty($attachments)): ?>
-                        <button type="button" class="btn btn--secondary js-open-media" data-target="#mediaModal">
-                            📎 Media, links and docs (<?= count($attachments) ?>)
-                        </button>
-                    <?php endif; ?>
+  <?php $modalId = 'mediaModal'; require __DIR__ . '/../../partials/attachments_modal.php'; ?>
+<?php endif; ?>
                 </div>
 
 

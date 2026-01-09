@@ -1,0 +1,3 @@
+# Optional: deny direct access in non-dev environments.
+# Comment this block if you want to run scripts in browser.
+# Deny from all

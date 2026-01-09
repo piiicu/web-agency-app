@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   client_id INT NOT NULL,
   subject VARCHAR(255) NOT NULL,
+    priority TINYINT NOT NULL DEFAULT 3,
   status ENUM('open','resolved') NOT NULL DEFAULT 'open',
   sort_order INT NOT NULL DEFAULT 0,
   deleted_at DATETIME NULL,

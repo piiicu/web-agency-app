@@ -16,3 +16,7 @@ Thumbs.db
 
 # vendor (dacă vei folosi composer)
 vendor/
+
+# ticket uploads
+uploads/tickets/*
+!uploads/tickets/.gitkeep
