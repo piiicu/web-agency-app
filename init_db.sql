@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS ticket_messages (
 CREATE TABLE IF NOT EXISTS ticket_attachments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   ticket_id INT NOT NULL,
+  message_id INT NULL,
   uploaded_by INT NOT NULL,
   original_name VARCHAR(255) NOT NULL,
   stored_name VARCHAR(255) NOT NULL,
@@ -110,11 +111,15 @@ CREATE TABLE IF NOT EXISTS ticket_attachments (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   INDEX idx_ta_ticket_id (ticket_id),
+  INDEX idx_ta_message_id (message_id),
   INDEX idx_ta_uploaded_by (uploaded_by),
 
   CONSTRAINT fk_ta_ticket
     FOREIGN KEY (ticket_id) REFERENCES tickets(id)
     ON DELETE CASCADE,
+  CONSTRAINT fk_ta_message
+    FOREIGN KEY (message_id) REFERENCES ticket_messages(id)
+    ON DELETE SET NULL,
   CONSTRAINT fk_ta_uploader
     FOREIGN KEY (uploaded_by) REFERENCES users(id)
     ON DELETE CASCADE

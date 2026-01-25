@@ -35,11 +35,10 @@ class TicketController
 
         $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, body, is_internal) VALUES (?, ?, ?, 0)");
         $stmt->execute([$ticketId, $clientId, $message]);
+        $messageId = (int)$pdo->lastInsertId();
 
         // upload attachments (optional)
-        if (method_exists($this, 'handleAttachments')) {
-            $this->handleAttachments($ticketId);
-        }
+        $this->handleAttachments($ticketId, $messageId);
 
         header("Location: " . BASE_URL . "client/ticket&id=" . $ticketId);
         exit;
@@ -81,7 +80,7 @@ class TicketController
 
         // Attachments (public list; access control is enforced at download route)
         $stmt = $pdo->prepare("
-            SELECT id, original_name, created_at
+            SELECT id, ticket_id, message_id, uploaded_by, original_name, mime_type, size_bytes, created_at
             FROM ticket_attachments
             WHERE ticket_id = ?
             ORDER BY id ASC
@@ -136,10 +135,10 @@ class TicketController
         ");
         $stmt->execute([$ticketId, $clientId, $body]);
 
-        // upload attachments (if you added handleAttachments() in TicketController)
-        if (method_exists($this, 'handleAttachments')) {
-            $this->handleAttachments($ticketId);
-        }
+        $messageId = (int)$pdo->lastInsertId();
+
+        // upload attachments (optional)
+        $this->handleAttachments($ticketId, $messageId);
 
         // touch ticket updated_at if you have it
         try {
@@ -233,9 +232,9 @@ class TicketController
         $stmt->execute([$ticketId]);
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Attachments (admin can see all; download route should still enforce access)
+        // Attachments (admin can see all; access is enforced at download route)
         $stmt = $pdo->prepare("
-            SELECT id, original_name, created_at
+            SELECT id, ticket_id, message_id, uploaded_by, original_name, mime_type, size_bytes, created_at
             FROM ticket_attachments
             WHERE ticket_id = ?
             ORDER BY id ASC
@@ -263,12 +262,15 @@ class TicketController
         $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, body, is_internal) VALUES (?, ?, ?, ?)");
         $stmt->execute([$ticketId, $staffId, $body, $isInternal]);
 
+        $messageId = (int)$pdo->lastInsertId();
+
+        // upload attachments (optional)
+        $this->handleAttachments($ticketId, $messageId);
+
         $pdo->prepare("UPDATE tickets SET updated_at = NOW() WHERE id=?")->execute([$ticketId]);
 
         header("Location: " . BASE_URL . "admin/ticket&id=" . $ticketId);
         exit;
-
-        $this->handleAttachments($ticketId);
     }
 
     // ADMIN: change status
@@ -393,7 +395,7 @@ class TicketController
     }
 
     // attachment
-    private function handleAttachments(int $ticketId): void
+    private function handleAttachments(int $ticketId, ?int $messageId = null): void
     {
         global $pdo;
 
@@ -483,10 +485,10 @@ class TicketController
 
             $stmt = $pdo->prepare("
             INSERT INTO ticket_attachments
-              (ticket_id, uploaded_by, original_name, stored_name, mime_type, size_bytes)
-            VALUES (?, ?, ?, ?, ?, ?)
+              (ticket_id, message_id, uploaded_by, original_name, stored_name, mime_type, size_bytes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
-            $stmt->execute([$ticketId, $userId, $original, $stored, $realMime, $size]);
+            $stmt->execute([$ticketId, $messageId, $userId, $original, $stored, $realMime, $size]);
         }
     }
 

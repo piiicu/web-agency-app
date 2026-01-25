@@ -1,142 +1,275 @@
+// Global tiny JS helpers (kept intentionally small).
 (function () {
-  function qs(sel, root) { return (root || document).querySelector(sel); }
-  function qsa(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  // Auto-scroll chat threads to bottom (WhatsApp style)
+  document.addEventListener('DOMContentLoaded', function () {
+    var threads = document.querySelectorAll('[data-chat-thread]');
+    if (!threads || threads.length === 0) return;
 
-  function openModal(modal) {
-    if (!modal) return;
-    modal.classList.remove('is-hidden');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeModal(modal) {
-    if (!modal) return;
-    modal.classList.add('is-hidden');
-    document.body.style.overflow = '';
-
-    // also close viewer if present
-    var viewer = qs('[data-viewer]', modal);
-    if (viewer) viewer.classList.add('is-hidden');
-    var content = qs('[data-viewer-content]', modal);
-    if (content) content.innerHTML = '';
-  }
-
-  function setActiveTab(modal, filter) {
-    qsa('.media-tab', modal).forEach(function (btn) {
-      btn.classList.toggle('is-active', btn.getAttribute('data-filter') === filter);
+    threads.forEach(function (el) {
+      try {
+        el.scrollTop = el.scrollHeight;
+      } catch (e) {}
     });
-
-    qsa('.media-item', modal).forEach(function (item) {
-      var kind = item.getAttribute('data-kind') || 'all';
-      var show = (filter === 'all') || (kind === filter);
-      item.style.display = show ? '' : 'none';
-    });
-  }
-
-  function openViewer(modal, type, src) {
-    var viewer = qs('[data-viewer]', modal);
-    var content = qs('[data-viewer-content]', modal);
-    if (!viewer || !content) return;
-
-    content.innerHTML = '';
-
-    if (type === 'image') {
-      var img = document.createElement('img');
-      img.src = src;
-      img.alt = 'attachment';
-      img.loading = 'eager';
-      content.appendChild(img);
-    } else if (type === 'pdf') {
-      var iframe = document.createElement('iframe');
-      iframe.src = src;
-      iframe.title = 'PDF preview';
-      iframe.setAttribute('referrerpolicy', 'no-referrer');
-      content.appendChild(iframe);
-    } else {
-      var a = document.createElement('a');
-      a.href = src;
-      a.textContent = 'Open file';
-      a.target = '_blank';
-      content.appendChild(a);
-    }
-
-    viewer.classList.remove('is-hidden');
-  }
-
-  document.addEventListener('click', function (e) {
-    // Open modal (supports: .js-open-media with data-target OR .attachments-toggle with data-modal)
-    var openBtn = e.target.closest && (e.target.closest('.js-open-media') || e.target.closest('.attachments-toggle'));
-    if (openBtn) {
-      var sel = openBtn.getAttribute('data-target') || openBtn.getAttribute('data-modal');
-      if (!sel) return;
-      var modal = qs(sel);
-      if (!modal) return;
-      openModal(modal);
-      setActiveTab(modal, 'all');
-      return;
-    }
-
-    // Close modal
-    var closeBtn = e.target.closest && (e.target.closest('.js-close-media') || e.target.closest('.media-modal__backdrop'));
-    if (closeBtn) {
-      var modal2 = closeBtn.closest('.media-modal');
-      if (modal2) {
-        closeModal(modal2);
-        return;
-      }
-    }
-
-    // Tabs
-    var tabBtn = e.target.closest && e.target.closest('.media-tab');
-    if (tabBtn) {
-      var modal3 = tabBtn.closest('.media-modal');
-      if (!modal3) return;
-      setActiveTab(modal3, tabBtn.getAttribute('data-filter') || 'all');
-      return;
-    }
-
-    // Open attachment preview
-    var itemBtn = e.target.closest && e.target.closest('.js-attachment-open');
-    if (itemBtn) {
-      var modal4 = itemBtn.closest('.media-modal');
-      if (!modal4) return;
-      openViewer(modal4, itemBtn.getAttribute('data-type') || 'file', itemBtn.getAttribute('data-src') || '#');
-      return;
-    }
-
-    // Close viewer
-    var viewerClose = e.target.closest && (e.target.closest('.js-viewer-close') || e.target.closest('.media-viewer__backdrop'));
-    if (viewerClose) {
-      var viewer = viewerClose.closest('.media-viewer');
-      if (viewer) viewer.classList.add('is-hidden');
-      var modal5 = viewerClose.closest('.media-modal');
-      if (modal5) {
-        var content = qs('[data-viewer-content]', modal5);
-        if (content) content.innerHTML = '';
-      }
-      return;
-    }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-
-    // Close viewer first if open
-    var openViewerEl = document.querySelector('.media-viewer:not(.is-hidden)');
-    if (openViewerEl) {
-      openViewerEl.classList.add('is-hidden');
-      var modal = openViewerEl.closest('.media-modal');
-      if (modal) {
-        var content = qs('[data-viewer-content]', modal);
-        if (content) content.innerHTML = '';
-      }
-      return;
-    }
-
-    // Otherwise close modal
-    var modal2 = document.querySelector('.media-modal:not(.is-hidden)');
-    if (modal2) closeModal(modal2);
   });
 })();
 
+(function () {
+  function getInt(v, fallback = 0) {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function scrollToBottom(thread) {
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function scrollMessageIntoView(thread, el) {
+    // scroll in container, not full page
+    const top = el.offsetTop - 12;
+    thread.scrollTop = top < 0 ? 0 : top;
+  }
+
+  function initChatAutoScroll() {
+    const thread = document.querySelector('[data-chat-thread]');
+    if (!thread) return;
+
+    const ticketId = getInt(thread.getAttribute('data-ticket-id'));
+    const role = thread.getAttribute('data-role') || 'user';
+
+    if (!ticketId) {
+      // fallback: scroll to bottom
+      scrollToBottom(thread);
+      return;
+    }
+
+    const key = `chat_last_seen_${role}_${ticketId}`;
+
+    // toate mesajele (trebuie să aibă data-message-id)
+    const msgEls = Array.from(thread.querySelectorAll('[data-message-id]'));
+    if (msgEls.length === 0) {
+      scrollToBottom(thread);
+      return;
+    }
+
+    const lastSeen = getInt(localStorage.getItem(key), 0);
+
+    // ultimul mesaj
+    const lastMsgEl = msgEls[msgEls.length - 1];
+    const lastMsgId = getInt(lastMsgEl.getAttribute('data-message-id'), 0);
+
+    // găsește primul mesaj "nou" (id > lastSeen)
+    const firstUnread = msgEls.find(el => getInt(el.getAttribute('data-message-id'), 0) > lastSeen);
+
+    // Așteaptă un frame ca să fie calculate dimensiunile (img loading etc.)
+    requestAnimationFrame(() => {
+      if (firstUnread) {
+        // ca WhatsApp: sare la primul mesaj nou
+        scrollMessageIntoView(thread, firstUnread);
+
+        // opțional: highlight discret
+        firstUnread.classList.add('chat-unread-jump');
+        setTimeout(() => firstUnread.classList.remove('chat-unread-jump'), 1500);
+      } else {
+        // altfel la final
+        scrollToBottom(thread);
+      }
+
+      // marchează ca văzut ultimul mesaj (după ce ai făcut jump)
+      // (practic: ai "vizitat" discuția)
+      if (lastMsgId > 0) localStorage.setItem(key, String(lastMsgId));
+    });
+
+    // Dacă user-ul stă în jos (aproape de bottom) și apar imagini încărcate târziu, păstrează-l jos
+    // (nu îl tragem în jos dacă a dat scroll în sus manual)
+    let userScrolledUp = false;
+
+    thread.addEventListener('scroll', () => {
+      const nearBottom = (thread.scrollHeight - thread.scrollTop - thread.clientHeight) < 80;
+      userScrolledUp = !nearBottom;
+    });
+
+    // Observă modificări (ex: se încarcă imagini / se adaugă noduri)
+    const mo = new MutationObserver(() => {
+      if (!userScrolledUp) scrollToBottom(thread);
+    });
+
+    mo.observe(thread, { childList: true, subtree: true });
+  }
+
+  // run
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChatAutoScroll);
+  } else {
+    initChatAutoScroll();
+  }
+})();
 
 
+(function () {
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
 
+  function clearHighlights(root) {
+    const marks = root.querySelectorAll("mark.chat-mark");
+    marks.forEach(m => {
+      const text = document.createTextNode(m.textContent || "");
+      m.replaceWith(text);
+    });
+    root.normalize();
+  }
+
+  function highlightTermInElement(el, term) {
+    const text = el.textContent || "";
+    if (!term || !text) return 0;
+
+    const re = new RegExp(escapeRegExp(term), "gi");
+    let count = 0;
+
+    // work on HTML safely by splitting text nodes
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+
+    nodes.forEach(node => {
+      const v = node.nodeValue;
+      if (!v) return;
+
+      const matches = [...v.matchAll(re)];
+      if (matches.length === 0) return;
+
+      const frag = document.createDocumentFragment();
+      let lastIndex = 0;
+
+      matches.forEach(match => {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        frag.appendChild(document.createTextNode(v.slice(lastIndex, start)));
+
+        const mark = document.createElement("mark");
+        mark.className = "chat-mark";
+        mark.textContent = v.slice(start, end);
+        frag.appendChild(mark);
+
+        lastIndex = end;
+        count++;
+      });
+
+      frag.appendChild(document.createTextNode(v.slice(lastIndex)));
+      node.parentNode.replaceChild(frag, node);
+    });
+
+    return count;
+  }
+
+  function scrollMarkIntoView(container, mark) {
+    // scroll inside chat thread
+    const top = mark.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    container.scrollTop += top - 80;
+  }
+
+  function initChatSearchForContainer(container) {
+    const input = container.parentElement.querySelector("[data-chat-search]");
+    const meta = container.parentElement.querySelector("[data-chat-search-meta]");
+    const btnPrev = container.parentElement.querySelector("[data-chat-search-prev]");
+    const btnNext = container.parentElement.querySelector("[data-chat-search-next]");
+    const btnClear = container.parentElement.querySelector("[data-chat-search-clear]");
+
+    if (!input || !meta || !btnPrev || !btnNext || !btnClear) return;
+
+    const getMarks = () => Array.from(container.querySelectorAll("mark.chat-mark"));
+    let currentIndex = -1;
+
+    function updateMeta() {
+      const marks = getMarks();
+      if (marks.length === 0) {
+        meta.textContent = input.value.trim() ? "0 rezultate" : "";
+        return;
+      }
+      meta.textContent = `${currentIndex + 1}/${marks.length}`;
+    }
+
+    function setActive(index) {
+      const marks = getMarks();
+      marks.forEach(m => m.classList.remove("chat-mark--active"));
+
+      if (marks.length === 0) {
+        currentIndex = -1;
+        updateMeta();
+        return;
+      }
+
+      currentIndex = (index + marks.length) % marks.length;
+      const active = marks[currentIndex];
+      active.classList.add("chat-mark--active");
+      scrollMarkIntoView(container, active);
+      updateMeta();
+    }
+
+    function runSearch() {
+      const term = input.value.trim();
+      clearHighlights(container);
+
+      currentIndex = -1;
+
+      if (!term) {
+        meta.textContent = "";
+        return;
+      }
+
+      // Highlight only inside message text blocks
+      const textBlocks = container.querySelectorAll(".chat-text");
+      let total = 0;
+      textBlocks.forEach(el => {
+        total += highlightTermInElement(el, term);
+      });
+
+      if (total === 0) {
+        meta.textContent = "0 rezultate";
+        return;
+      }
+
+      // move to first result
+      setActive(0);
+    }
+
+    input.addEventListener("input", () => {
+      // debounce light
+      window.clearTimeout(input.__t);
+      input.__t = window.setTimeout(runSearch, 120);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        setActive(currentIndex + 1);
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        input.value = "";
+        clearHighlights(container);
+        meta.textContent = "";
+      }
+    });
+
+    btnNext.addEventListener("click", () => setActive(currentIndex + 1));
+    btnPrev.addEventListener("click", () => setActive(currentIndex - 1));
+    btnClear.addEventListener("click", () => {
+      input.value = "";
+      clearHighlights(container);
+      meta.textContent = "";
+    });
+  }
+
+  function initAllChatSearch() {
+    const threads = document.querySelectorAll("[data-chat-container]");
+    threads.forEach(initChatSearchForContainer);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAllChatSearch);
+  } else {
+    initAllChatSearch();
+  }
+})();

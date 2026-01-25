@@ -1,187 +1,185 @@
 <?php Auth::requireRole(['client']); ?>
 <?php require __DIR__ . '/../../partials/head.php'; ?>
+
 <div class="container client-ticket">
-    <p><a href="<?= BASE_URL ?>client/tickets">⬅ Înapoi la Ticket-ele mele</a></p>
 
-    <style>
-        .wrap {
-            max-width: 900px;
-        }
+  <p><a href="<?= BASE_URL ?>client/tickets">⬅ Înapoi la Ticket-ele mele</a></p>
 
-        .head {
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 14px;
-            background: #fff;
-            margin-bottom: 14px;
-        }
+  <?php
+  // Map attachments by message_id
+  $attByMsg = [];
+  $orphan = [];
 
-        .badge {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid #e5e7eb;
-            font-weight: 700;
-        }
+  foreach (($attachments ?? []) as $a) {
+    $mid = (int)($a['message_id'] ?? 0);
+    if ($mid > 0) $attByMsg[$mid][] = $a;
+    else $orphan[] = $a;
+  }
 
-        .open {
-            background: #dcfce7;
-            color: #166534;
-            border-color: #bbf7d0;
-        }
+  function isImg(?string $mime): bool
+  {
+    return is_string($mime) && str_starts_with($mime, 'image/');
+  }
+  function isPdf(?string $mime): bool
+  {
+    return $mime === 'application/pdf';
+  }
 
-        .closed {
-            background: #fee2e2;
-            color: #991b1b;
-            border-color: #fecaca;
-        }
+  // helper render attachment
+  function renderAttachment(array $a): void
+  {
+    $id = (int)$a['id'];
+    $name = (string)($a['original_name'] ?? 'file');
+    $mime = (string)($a['mime_type'] ?? 'application/octet-stream');
 
-        .timeline {
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            background: #fff;
-            overflow: hidden;
-        }
+    $openUrl = BASE_URL . 'ticket-attachment&id=' . $id . '&inline=1';
+    $downloadUrl = BASE_URL . 'ticket-attachment&id=' . $id . '&download=1';
 
-        .msg {
-            padding: 14px;
-            border-top: 1px solid #f1f5f9;
-        }
+    if (isImg($mime)) {
+  ?>
+      <div class="chat-attachment-item">
+        <a class="chat-attachment chat-attachment--image" href="<?= htmlspecialchars($openUrl) ?>" target="_blank" rel="noopener">
+          <img src="<?= htmlspecialchars($openUrl) ?>" alt="<?= htmlspecialchars($name) ?>" loading="lazy">
+        </a>
+        <a class="chat-attachment-link" href="<?= htmlspecialchars($downloadUrl) ?>">Descarcă</a>
+      </div>
+    <?php
+      return;
+    }
 
-        .msg:first-child {
-            border-top: none;
-        }
+    ?>
+    <div class="chat-attachment chat-attachment--file">
+      <div class="chat-file">
+        <div class="chat-file__icon"><?= isPdf($mime) ? 'PDF' : 'FILE' ?></div>
+        <div class="chat-file__meta">
+          <div class="chat-file__name"><?= htmlspecialchars($name) ?></div>
+          <div class="chat-file__actions">
+            <a href="<?= htmlspecialchars($openUrl) ?>" target="_blank" rel="noopener">Deschide</a>
+            <a href="<?= htmlspecialchars($downloadUrl) ?>">Descarcă</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  <?php
+  }
+  ?>
 
-        .meta {
-            color: #6b7280;
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
+  <div class="client-ticket__wrap">
 
-        .bubble {
-            white-space: pre-wrap;
-        }
+    <div class="client-ticket__head">
+      <h2 style="margin:0 0 6px;">#<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h2>
 
-        .attachments {
-            margin-top: 10px;
-        }
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span class="badge <?= ($ticket['status'] === 'open') ? 'open' : 'closed' ?>">
+          <?= ($ticket['status'] === 'open') ? '🟢 Deschis' : '🔴 Închis' ?>
+        </span>
 
-        .attachments a {
-            display: inline-block;
-            margin-right: 10px;
-            margin-top: 6px;
-        }
+        <span style="color:#6b7280;">
+          Creat: <?= htmlspecialchars($ticket['created_at']) ?>
+        </span>
+      </div>
+    </div>
 
-        .reply {
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 14px;
-            background: #fff;
-            margin-top: 14px;
-        }
+    <!-- CHAT -->
+    <!-- Search bar chat -->
+    <div class="chat-search">
+      <input type="search" class="chat-search__input" placeholder="Caută în conversație..." data-chat-search>
+      <div class="chat-search__meta" data-chat-search-meta></div>
+      <div class="chat-search__actions">
+        <button type="button" class="chat-search__btn" data-chat-search-prev title="Previous">↑</button>
+        <button type="button" class="chat-search__btn" data-chat-search-next title="Next">↓</button>
+        <button type="button" class="chat-search__btn" data-chat-search-clear title="Clear">✕</button>
+      </div>
+    </div>
 
-        textarea {
-            width: 100%;
-            min-height: 120px;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
-        }
 
-        .btn {
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 1px solid #111;
-            background: #111;
-            color: #fff;
-            cursor: pointer;
-            font-weight: 700;
-        }
-    </style>
+    <!-- MOD 1: data-ticket-id + data-role -->
+    <div class="chat-thread chat-thread--adminlike" data-chat-thread data-chat-container data-ticket-id="<?= (int)$ticket['id'] ?>" data-role="client">
 
-    <div class="wrap">
+      <?php if (empty($messages) && empty($orphan)): ?>
+        <div class="chat-empty">Nu există mesaje încă.</div>
+      <?php endif; ?>
 
-        <div class="head">
-            <h2 style="margin:0 0 6px;">#<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h2>
+      <?php foreach ($messages as $m): ?>
+        <?php
+        $mine = (Auth::id() && (int)$m['sender_id'] === (int)Auth::id());
+        $mid  = (int)$m['id'];
+        $mAtt = $attByMsg[$mid] ?? [];
+        ?>
 
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <span class="badge <?= ($ticket['status'] === 'open') ? 'open' : 'closed' ?>">
-                    <?= ($ticket['status'] === 'open') ? '🟢 Deschis' : '🔴 Închis' ?>
-                </span>
+        <!-- MOD 2: data-message-id -->
+        <div class="chat-row <?= $mine ? 'is-mine' : '' ?>" data-message-id="<?= (int)$m['id'] ?>">
+          <div class="chat-bubble">
 
-                <span style="color:#6b7280;">
-                    Creat: <?= htmlspecialchars($ticket['created_at']) ?>
-                </span>
+            <div class="chat-meta">
+              <span class="chat-name"><?= htmlspecialchars($m['name'] ?? 'User') ?></span>
+              <span class="chat-time"><?= htmlspecialchars($m['created_at'] ?? '') ?></span>
             </div>
 
-            <?php if (!empty($attachments)): ?>
-                <div class="attachments">
-                    <b>Atașamente:</b><br>
-                    <?php foreach ($attachments as $a): ?>
-                        <a href="<?= BASE_URL ?>ticket-attachment&id=<?= (int)$a['id'] ?>" target="_blank">
-                            📎 <?= htmlspecialchars($a['original_name']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <div class="timeline">
-            <?php if (empty($messages)): ?>
-                <div class="msg">Nu există mesaje încă.</div>
+            <?php if (!empty(trim((string)($m['body'] ?? '')))): ?>
+              <div class="chat-text"><?= nl2br(htmlspecialchars((string)$m['body'])) ?></div>
+            <?php else: ?>
+              <div class="chat-text chat-text--muted">(Mesaj fără text)</div>
             <?php endif; ?>
 
-            <?php foreach ($messages as $m): ?>
-                <div class="msg">
-                    <div class="meta">
-                        <b><?= htmlspecialchars($m['name'] ?? 'User') ?></b>
-                        • <?= htmlspecialchars($m['created_at'] ?? '') ?>
-                    </div>
-                    <div class="bubble">
-                        <?php if (!empty(trim($m['body'] ?? ''))): ?>
-                            <?= nl2br(htmlspecialchars($m['body'])) ?>
-                        <?php else: ?>
-                            <span style="color:#9ca3af;">(Mesaj fără text)</span>
-                        <?php endif; ?>
-                    </div>
+            <?php if (!empty($mAtt)): ?>
+              <div class="chat-attachments">
+                <?php foreach ($mAtt as $a) renderAttachment($a); ?>
+              </div>
+            <?php endif; ?>
 
-                </div>
-            <?php endforeach; ?>
+          </div>
         </div>
+      <?php endforeach; ?>
 
-        <?php if ($ticket['status'] !== 'open'): ?>
-            <div class="reply" style="background:#fff7ed; border-color:#fed7aa;">
-                <b>Ticket închis.</b> Nu mai poți trimite mesaje pe acest ticket.
+      <?php if (!empty($orphan)): ?>
+        <div class="chat-row">
+          <div class="chat-bubble chat-bubble--system">
+            <div class="chat-meta">
+              <span class="chat-name">Atașamente (mai vechi)</span>
+              <span class="chat-time">(fără asociere cu un mesaj)</span>
             </div>
-        <?php else: ?>
-            <div class="reply">
-                <div class="ticket-compose-header">
-                    <h3 style="margin-top:0;">Răspuns nou</h3>
 
-                    <?php if (!empty($attachments)): ?>
-  <?php $modalId = 'mediaModal'; require __DIR__ . '/../../partials/attachments_modal.php'; ?>
-<?php endif; ?>
-                </div>
-
-
-                <form method="POST" action="<?= BASE_URL ?>client/ticket-message" enctype="multipart/form-data">
-                    <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
-
-                    <div style="margin-bottom:10px;">
-                        <textarea name="message" placeholder="Scrie mesajul..." required></textarea>
-                    </div>
-
-                    <div style="margin-bottom:12px;">
-                        <label><b>Atașamente</b> (jpg/png/webp/pdf, max 8MB)</label><br>
-                        <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
-                    </div>
-
-                    <button class="btn" type="submit">Trimite</button>
-                </form>
+            <div class="chat-text chat-text--muted" style="margin-bottom:8px;">
+              Aceste fișiere au fost încărcate înainte de actualizarea sistemului și nu sunt legate de un mesaj.
             </div>
-        <?php endif; ?>
+
+            <div class="chat-attachments">
+              <?php foreach ($orphan as $a) renderAttachment($a); ?>
+            </div>
+          </div>
+        </div>
+      <?php endif; ?>
 
     </div>
 
+    <?php if ($ticket['status'] !== 'open'): ?>
+      <div class="client-ticket__reply client-ticket__reply--closed">
+        <b>Ticket închis.</b> Nu mai poți trimite mesaje pe acest ticket.
+      </div>
+    <?php else: ?>
+      <div class="client-ticket__reply">
+        <h3 style="margin-top:0;">Răspuns nou</h3>
+
+        <form method="POST" action="<?= BASE_URL ?>client/ticket-message" enctype="multipart/form-data">
+          <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
+
+          <div style="margin-bottom:10px;">
+            <textarea class="client-ticket__textarea" name="message" placeholder="Scrie mesajul..." required></textarea>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label><b>Atașamente</b> (jpg/png/webp/pdf, max 8MB)</label><br>
+            <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
+          </div>
+
+          <button class="btn" type="submit">Trimite</button>
+        </form>
+      </div>
+    <?php endif; ?>
+
+  </div>
+
 </div>
+
 <?php require __DIR__ . '/../../partials/footer.php'; ?>
