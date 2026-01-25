@@ -66,18 +66,26 @@ class UserController
     {
         global $pdo;
 
+        Auth::requireRole(['admin']); // doar admin poate genera invite
+
         $userId = (int)($_POST['user_id'] ?? 0);
         if ($userId <= 0) {
             header("Location: " . BASE_URL . "admin/users");
             exit;
         }
 
-        $stmt = $pdo->prepare("SELECT role FROM users WHERE id=? LIMIT 1");
-        $stmt->execute([$userId]);
-        $role = $stmt->fetchColumn();
+        // opțional: nu genera invite pentru contul cu care ești logat
+        if ($userId === Auth::id()) {
+            $_SESSION['flash_error'] = 'Nu poți genera invite pentru contul curent.';
+            header("Location: " . BASE_URL . "admin/users");
+            exit;
+        }
 
-        if ($role !== 'client') {
-            $_SESSION['flash_error'] = 'Invite links are only for clients.';
+        // verificăm că userul există
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE id=? LIMIT 1");
+        $stmt->execute([$userId]);
+        if (!$stmt->fetchColumn()) {
+            $_SESSION['flash_error'] = 'User not found.';
             header("Location: " . BASE_URL . "admin/users");
             exit;
         }
@@ -89,6 +97,7 @@ class UserController
         header("Location: " . BASE_URL . "admin/users");
         exit;
     }
+
 
     private function createInviteLink(int $userId): string
     {

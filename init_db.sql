@@ -30,6 +30,27 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ========================================
+-- PASSWORD RESETS / INVITES
+-- (pentru generate invite + set password)
+-- ========================================
+CREATE TABLE IF NOT EXISTS password_resets (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_token_hash (token_hash),
+  KEY idx_user_id (user_id),
+  KEY idx_expires_used (expires_at, used_at),
+
+  CONSTRAINT fk_password_resets_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ========================================
 -- TABEL MESSAGES (CHAT)
 -- ========================================
 CREATE TABLE IF NOT EXISTS messages (
@@ -40,6 +61,32 @@ CREATE TABLE IF NOT EXISTS messages (
   INDEX idx_messages_user_id (user_id),
   CONSTRAINT fk_messages_user
     FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ========================================
+-- CHAT ATTACHMENTS
+-- (fișiere pentru chat intern)
+-- ========================================
+CREATE TABLE IF NOT EXISTS chat_attachments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  message_id INT NOT NULL,
+  uploaded_by INT NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  size_bytes INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  KEY idx_ca_message_id (message_id),
+  KEY idx_ca_uploaded_by (uploaded_by),
+
+  CONSTRAINT fk_ca_message
+    FOREIGN KEY (message_id) REFERENCES messages(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_ca_uploaded_by
+    FOREIGN KEY (uploaded_by) REFERENCES users(id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -56,7 +103,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
 -- ========================================
 -- TICKETS
 -- ========================================
@@ -64,7 +110,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   client_id INT NOT NULL,
   subject VARCHAR(255) NOT NULL,
-    priority TINYINT NOT NULL DEFAULT 3,
+  priority TINYINT NOT NULL DEFAULT 3,
   status ENUM('open','resolved') NOT NULL DEFAULT 'open',
   sort_order INT NOT NULL DEFAULT 0,
   deleted_at DATETIME NULL,
@@ -124,6 +170,3 @@ CREATE TABLE IF NOT EXISTS ticket_attachments (
     FOREIGN KEY (uploaded_by) REFERENCES users(id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-

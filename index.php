@@ -15,6 +15,7 @@ require_once __DIR__ . '/app/core/Auth.php';
 require_once __DIR__ . '/app/controllers/AuthController.php';
 require_once __DIR__ . '/app/controllers/TaskController.php';
 require_once __DIR__ . '/app/controllers/ChatController.php';
+require_once __DIR__ . '/app/controllers/ChatAttachmentController.php';
 require_once __DIR__ . '/app/controllers/TicketController.php';
 require_once __DIR__ . '/app/controllers/AttachmentController.php';
 require_once __DIR__ . '/app/controllers/UserController.php';
@@ -30,6 +31,7 @@ $protected = [
     'dashboard',
     'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite',
     'chat', 'chat-poll',
+    'chat-attachment',
     'admin/dashboard',
     'client/dashboard',
     'ticket-attachment',
@@ -135,6 +137,13 @@ if ($route === 'chat-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     (new ChatController())->poll();
     exit;
 }
+
+if ($route === 'chat-attachment' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    Auth::requireRole(['admin','employee','staff']);
+    (new ChatAttachmentController())->download();
+    exit;
+}
+
 
 /* =========================
    TICKETS - CLIENT

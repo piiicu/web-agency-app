@@ -20,8 +20,7 @@
       id="inviteLinkInput"
       style="width:70%;"
       value="<?= htmlspecialchars($inviteLink) ?>"
-      readonly
-    >
+      readonly>
 
     <button type="button" onclick="copyInviteLink()">
       Copiază
@@ -65,7 +64,7 @@
       <td><?= htmlspecialchars($u['email']) ?></td>
       <td><?= htmlspecialchars($u['role']) ?></td>
       <td>
-        <?php if ($u['role'] === 'client'): ?>
+        <?php if ((int)$u['id'] !== (int)Auth::id()): ?>
           <form method="POST" action="<?= BASE_URL ?>admin/users-invite" style="display:inline;">
             <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
             <button type="submit">Generate Invite</button>
@@ -74,22 +73,23 @@
           —
         <?php endif; ?>
       </td>
+
     </tr>
   <?php endforeach; ?>
 </table>
 
 <script>
-function copyInviteLink() {
-  const input = document.getElementById('inviteLinkInput');
-  input.select();
-  input.setSelectionRange(0, 99999); // mobile safe
+  function copyInviteLink() {
+    const input = document.getElementById('inviteLinkInput');
+    input.select();
+    input.setSelectionRange(0, 99999); // mobile safe
 
-  navigator.clipboard.writeText(input.value).then(() => {
-    const status = document.getElementById('copyStatus');
-    status.style.display = 'inline';
-    setTimeout(() => status.style.display = 'none', 2000);
-  });
-}
+    navigator.clipboard.writeText(input.value).then(() => {
+      const status = document.getElementById('copyStatus');
+      status.style.display = 'inline';
+      setTimeout(() => status.style.display = 'none', 2000);
+    });
+  }
 </script>
 
 <?php require __DIR__ . '/../_layout_end.php'; ?>
