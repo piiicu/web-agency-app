@@ -7,9 +7,9 @@
   <title>Web Agency App</title>
 
   <!-- CSS: load global styles everywhere, and add client overrides for client role -->
-  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css">
+  <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css?v=<?= time() ?>">
   <?php if (class_exists('Auth') && Auth::check() && Auth::role() === 'client'): ?>
-    <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css">
+    <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css?v=<?= time() ?>">
   <?php endif; ?>
 </head>
 <body>
