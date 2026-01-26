@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="App Logo">
+  <circle cx="80" cy="80" r="74" fill="#111"/>
+  <circle cx="80" cy="80" r="70" fill="#fff"/>
+  <text x="80" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="700" fill="#111">WA</text>
+</svg>

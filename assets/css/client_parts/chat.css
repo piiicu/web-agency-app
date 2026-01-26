@@ -1,0 +1,281 @@
+/* ========= CHAT (WhatsApp-style) ========= */
+
+.client-ticket .chat-thread {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px;
+  max-height: 62vh;
+  overflow: auto;
+
+  /* important: să nu mai stea "îngust" pe dreapta */
+  /* width: 100%; */
+}
+
+.client-ticket .chat-empty {
+  color: #6b7280;
+  padding: 8px;
+}
+
+/* fiecare mesaj */
+.client-ticket .chat-row {
+  display: flex;
+  justify-content: flex-start; /* default: stânga */
+  margin-bottom: 14px;         /* spațiu între mesaje */
+}
+
+/* mesajele mele (client) în dreapta */
+.client-ticket .chat-row.is-mine {
+  justify-content: flex-end;
+}
+
+.client-ticket .chat-bubble {
+  width: fit-content;
+  max-width: 720px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6; /* mesajele altora */
+}
+
+/* mesajele mele – fundal diferit */
+.client-ticket .chat-row.is-mine .chat-bubble {
+  background: #eef2ff;
+  border-color: #e0e7ff;
+}
+
+.client-ticket .chat-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 800; /* bold */
+  margin-bottom: 6px;
+}
+
+.client-ticket .chat-name {
+  color: #111827;
+}
+
+.client-ticket .chat-time {
+  color: #6b7280;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.client-ticket .chat-text {
+  color: #111827;
+  word-break: break-word;
+}
+
+.client-ticket .chat-text--muted {
+  color: #6b7280;
+}
+
+/* atașamente */
+.client-ticket .chat-attachments {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.client-ticket .chat-attachment--image img {
+  display: block;
+  width: 220px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.client-ticket .chat-attachment-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.client-ticket .chat-file {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  min-width: 280px;
+}
+
+.client-ticket .chat-file__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+}
+
+.client-ticket .chat-file__name {
+  font-weight: 800;
+  color: #111827;
+  word-break: break-word;
+}
+
+.client-ticket .chat-file__actions a {
+  margin-right: 10px;
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* ===== Client ticket chat - make it look like admin ===== */
+
+.client-ticket__wrap{
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* thread (ca la admin) */
+.client-ticket .chat-thread--adminlike{
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px;
+  max-height: 62vh;
+  overflow: auto;
+  width: 100%;
+}
+
+/* spacing între mesaje */
+.client-ticket .chat-row{
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.client-ticket .chat-row.is-mine{
+  justify-content: flex-end;
+}
+
+.client-ticket .chat-bubble{
+  width: fit-content;
+  max-width: 760px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+}
+
+.client-ticket .chat-row.is-mine .chat-bubble{
+  background: #eef2ff;
+  border-color: #e0e7ff;
+}
+
+/* bubble special pentru mesaj "system/orphan" */
+.client-ticket .chat-bubble--system{
+  background: #f9fafb;
+}
+
+/* meta bold, ca la admin */
+.client-ticket .chat-meta{
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.client-ticket .chat-time{
+  color: #6b7280;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.client-ticket .chat-text{
+  color: #111827;
+  word-break: break-word;
+}
+
+.client-ticket .chat-text--muted{
+  color: #6b7280;
+}
+
+/* atașamente */
+.client-ticket .chat-attachments{
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.client-ticket .chat-attachment-item{
+  display: inline-block;
+}
+
+.client-ticket .chat-attachment--image img{
+  display: block;
+  width: 220px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.client-ticket .chat-attachment-link{
+  display: inline-block;
+  margin-top: 6px;
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.client-ticket .chat-file{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  min-width: 280px;
+}
+
+.client-ticket .chat-file__icon{
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+}
+
+.client-ticket .chat-file__name{
+  font-weight: 800;
+  color: #111827;
+  word-break: break-word;
+}
+
+.client-ticket .chat-file__actions a{
+  margin-right: 10px;
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* composer mai mare */
+.client-ticket .client-ticket__textarea{
+  min-height: 160px;
+}
+
+.chat-unread-jump {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+

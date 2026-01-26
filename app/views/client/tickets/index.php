@@ -1,5 +1,5 @@
-<?php require __DIR__ . '/../../partials/head.php'; ?>
-<div class="container">
+<?php require __DIR__ . '/../_layout_start.php'; ?>
+<div class="client-tickets">
     <h2>Ticket-ele mele</h2>
     <p><a href="<?= BASE_URL ?>client/dashboard">⬅ Înapoi</a></p>
 
@@ -76,4 +76,4 @@
         </tbody>
     </table>
 </div>
-<?php require __DIR__ . '/../../partials/footer.php'; ?>
+<?php require __DIR__ . '/../_layout_end.php'; ?>

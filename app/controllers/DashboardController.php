@@ -41,8 +41,20 @@ class DashboardController
         $users = [];
         $inviteLink = null;
         if (Auth::role() === 'admin') {
-            $users = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY id DESC")
-                ->fetchAll(PDO::FETCH_ASSOC);
+            // Soft delete support: afișăm doar userii activi (is_active = 1).
+            // Dacă DB e veche și nu are coloana is_active, o adăugăm automat.
+            try {
+                $users = $pdo->query("SELECT id, name, email, role, created_at FROM users WHERE is_active = 1 ORDER BY id DESC")
+                    ->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'Unknown column') !== false) {
+                    $pdo->exec("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1");
+                    $users = $pdo->query("SELECT id, name, email, role, created_at FROM users WHERE is_active = 1 ORDER BY id DESC")
+                        ->fetchAll(PDO::FETCH_ASSOC);
+                } else {
+                    throw $e;
+                }
+            }
 
             $inviteLink = $_SESSION['invite_link'] ?? null;
             unset($_SESSION['invite_link']);

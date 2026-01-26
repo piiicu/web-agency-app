@@ -5,15 +5,36 @@ class ClientController
     public function index()
     {
         global $pdo;
-
-        // doar clientii
-        $stmt = $pdo->query("
-            SELECT id, name, email, company, phone
-            FROM users
-            WHERE role = 'client'
-            ORDER BY id DESC
-        ");
+        // doar clientii activi (soft delete: is_active = 0 => ascuns)
+        // include number of tickets for each client (for the Clients table)
+        // Note: subquery avoids grouping issues and stays compatible with the existing view.
+        try {
+            $stmt = $pdo->query("
+                SELECT
+                    u.id, u.name, u.email, u.company, u.phone,
+                    (SELECT COUNT(*) FROM tickets t WHERE t.client_id = u.id) AS tickets_count
+                FROM users u
+                WHERE u.role = 'client' AND u.is_active = 1
+                ORDER BY u.id DESC
+            ");
+        } catch (PDOException $e) {
+            // dacă DB e veche și nu are coloana is_active, o adăugăm și reîncercăm
+            if (strpos($e->getMessage(), 'Unknown column') !== false) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1");
+                $stmt = $pdo->query("
+                    SELECT
+                        u.id, u.name, u.email, u.company, u.phone,
+                        (SELECT COUNT(*) FROM tickets t WHERE t.client_id = u.id) AS tickets_count
+                    FROM users u
+                    WHERE u.role = 'client' AND u.is_active = 1
+                    ORDER BY u.id DESC
+                ");
+            } else {
+                throw $e;
+            }
+        }
         $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
         require __DIR__ . '/../views/admin/clients/index.php';
     }
@@ -190,8 +211,21 @@ class ClientController
             exit;
         }
 
-        $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
-        $stmt->execute([$clientId]);
+        // Soft delete (preferat): is_active = 0.
+        // Dacă baza de date e veche și nu are coloana is_active, o adăugăm automat.
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
+            $stmt->execute([$clientId]);
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Unknown column') !== false) {
+                // adaugă coloana lipsă și reîncearcă
+                $pdo->exec("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1");
+                $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
+                $stmt->execute([$clientId]);
+            } else {
+                throw $e;
+            }
+        }
 
         $_SESSION['flash_success'] = 'Client dezactivat (șters).';
         header("Location: " . BASE_URL . "admin/clients");
@@ -224,9 +258,19 @@ class ClientController
             exit;
         }
 
-        // dezactivează contul
-        $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
-        $stmt->execute([$userId]);
+        // dezactivează contul (soft delete)
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
+            $stmt->execute([$userId]);
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Unknown column') !== false) {
+                $pdo->exec("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1");
+                $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id=? LIMIT 1");
+                $stmt->execute([$userId]);
+            } else {
+                throw $e;
+            }
+        }
 
         // delogare
         session_destroy();

@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   role ENUM('admin','client','employee','staff') NOT NULL DEFAULT 'employee',
 
+  -- soft delete / disable account
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+
   company VARCHAR(255) NULL,
   phone VARCHAR(50) NULL,
   address VARCHAR(255) NULL,

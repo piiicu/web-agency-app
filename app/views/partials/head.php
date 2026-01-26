@@ -8,7 +8,9 @@
 
   <!-- CSS: load global styles everywhere, and add client overrides for client role -->
   <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/app.css?v=<?= time() ?>">
-  <?php if (class_exists('Auth') && Auth::check() && Auth::role() === 'client'): ?>
+  <?php // IMPORTANT: Auth::check() redirects; for styling checks we must NOT redirect.
+  // Use the session-backed user() instead.
+  if (class_exists('Auth') && Auth::user() && Auth::role() === 'client'): ?>
     <link rel="stylesheet" href="<?= ASSET_URL ?>assets/css/client.css?v=<?= time() ?>">
   <?php endif; ?>
 </head>

@@ -1,0 +1,35 @@
+/* Client-specific tweaks for the shared app shell */
+
+.app-shell--client .app-topbar__dot {
+  background: #14b8a6; /* teal */
+}
+
+.app-shell--client .app-bottomnav__item.is-active {
+  color: #0f766e;
+}
+
+/* Keep client pages slightly more airy */
+.app-shell--client .app-container {
+  max-width: 1280px;
+}
+
+.client-sidebar {
+  padding: 14px;
+}
+
+.client-sidebar .nav-item {
+  display: block;
+  padding: 10px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+}
+
+.client-sidebar .nav-item:hover {
+  background: #f3f4f6;
+}
+
+.client-sidebar .nav-item.is-active {
+  background: rgba(20, 184, 166, 0.10);
+  color: #0f766e;
+  font-weight: 700;
+}

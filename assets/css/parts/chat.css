@@ -1,0 +1,372 @@
+/* Chat (WhatsApp-like) */
+.chat-thread {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px;
+  height: min(60vh, 520px);
+  overflow: auto;
+}
+
+.chat-empty {
+  color: #6b7280;
+  padding: 10px;
+}
+
+.chat-row {
+  display: flex;
+  margin: 10px 0;
+}
+
+.chat-row.is-mine {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  width: min(560px, 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 10px 12px;
+}
+
+.chat-row.is-mine .chat-bubble {
+  background: #eef2ff;
+  border-color: #e0e7ff;
+}
+
+.chat-row.is-internal .chat-bubble {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+  font-weight: 800;
+}
+
+.chat-name {
+  /* font-weight: 800; */
+  color: #111;
+}
+
+.chat-time {
+  margin-left: auto;
+  color: #9ca3af;
+}
+
+.chat-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #fed7aa;
+  background: #ffedd5;
+  /* font-weight: 800; */
+  color: #9a3412;
+}
+
+.chat-text {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #111;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-text--muted {
+  color: #9ca3af;
+}
+
+.chat-attachments {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.chat-attachment--image {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.chat-attachment--image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chat-attachment-link {
+  align-self: flex-end;
+  font-size: 13px;
+  color: #111;
+  text-decoration: underline;
+}
+
+.chat-file {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px 12px;
+  width: min(420px, 100%);
+}
+
+.chat-file__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 12px;
+  color: #111;
+}
+
+.chat-file__name {
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.chat-file__actions a {
+  font-size: 13px;
+  margin-right: 12px;
+  text-decoration: underline;
+}
+
+.chat-unread-jump {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+/* ============================
+   INTERNAL CHAT (Admin) - SAFE PREFIX
+   (evită conflict cu chat-ul din tichete)
+   ============================ */
+
+.ichat-card { max-width: 980px; }
+
+.ichat-headerbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.ichat-headerbar h2{ margin:0; }
+
+.ichat-subtitle{
+  color:#6b7280;
+  font-size:13px;
+  margin-top:4px;
+}
+
+.ichat-search{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.ichat-search input{
+  flex:1;
+  padding:10px 12px;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  outline:none;
+  background:#fff;
+}
+
+.ichat-search input:focus{ border-color:#111; }
+
+.ichat-search button{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  background:#fff;
+  cursor:pointer;
+}
+
+.ichat-box{
+  border:1px solid #e6e6e6;
+  border-radius:10px;
+  padding:12px;
+  height:520px;
+  overflow:auto;
+  background:#fff;
+}
+
+.ichat-empty{
+  color:#888;
+  padding:10px;
+}
+
+/* wrapper message */
+.ichat-msg{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  margin:10px 0;
+}
+
+.ichat-me{ align-items:flex-end; }
+.ichat-other{ align-items:flex-start; }
+
+/* meta line */
+.ichat-meta{
+  display:flex;
+  gap:10px;
+  align-items:baseline;
+  width:78%;
+  margin-bottom:4px;
+  font-size:12px;
+  color:#6b7280;
+}
+
+.ichat-other .ichat-meta{ justify-content:space-between; }
+.ichat-me .ichat-meta{ justify-content:flex-end; }
+
+.ichat-name{
+  font-weight:800;
+  color:#111;
+}
+
+.ichat-time{
+  white-space:nowrap;
+  color:#9ca3af;
+}
+
+/* bubble */
+.ichat-bubble{
+  display:inline-block;
+  max-width:78%;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:10px 12px;
+  background:#f8fafc;
+}
+
+.ichat-me .ichat-bubble{
+  background:#dcfce7;
+  border-color:#bbf7d0;
+}
+
+.ichat-text{
+  font-size:14px;
+  line-height:1.45;
+  color:#111;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+/* attachments */
+.ichat-atts{
+  margin-top:10px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:flex-start;
+}
+
+/* IMPORTANT: limitează imaginile */
+.ichat-img{
+  width:220px;
+  max-width:100%;
+}
+
+.ichat-img img{
+  width:100%;
+  height:160px;
+  object-fit:cover;
+  border-radius:14px;
+  border:1px solid #e5e7eb;
+  display:block;
+  background:#fff;
+}
+
+.ichat-img a{
+  font-size:13px;
+  text-decoration:underline;
+}
+
+.ichat-file{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  background:#fff;
+  padding:10px 12px;
+  width:min(420px, 100%);
+}
+
+.ichat-file strong{
+  display:block;
+  margin-bottom:6px;
+  word-break:break-word;
+}
+
+.ichat-file a{
+  font-size:13px;
+  margin-right:12px;
+  text-decoration:underline;
+}
+
+/* composer */
+.ichat-form{
+  margin-top:12px;
+  display:flex;
+  gap:10px;
+  align-items:flex-end;
+}
+
+.ichat-inputwrap{ flex:1; }
+
+.ichat-inputwrap label{
+  display:block;
+  font-size:13px;
+  color:#666;
+  margin-bottom:6px;
+  font-weight:700;
+}
+
+.ichat-inputwrap textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  outline:none;
+  background:#fff;
+  resize:vertical;
+}
+
+.ichat-inputwrap textarea:focus{ border-color:#111; }
+
+.ichat-files{
+  margin-top:8px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.ichat-status{
+  color:#6b7280;
+  font-size:13px;
+}

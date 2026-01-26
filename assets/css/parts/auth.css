@@ -1,0 +1,46 @@
+/* Auth (login / forgot password) */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.auth-card {
+  width: 420px;
+  max-width: 100%;
+}
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.auth-logo {
+  width: 72px;
+  height: 72px;
+}
+.auth-title {
+  font-size: 22px;
+  font-weight: 800;
+}
+.auth-form .input {
+  width: 100%;
+}
+.auth-remember {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  margin: 6px 0 14px;
+}
+.auth-btn {
+  width: 100%;
+}
+.auth-links {
+  margin-top: 12px;
+  font-size: 14px;
+  text-align: center;
+}
+

@@ -1,7 +1,6 @@
-<?php Auth::requireRole(['client']); ?>
-<?php require __DIR__ . '/../partials/head.php'; ?>
+<?php require __DIR__ . '/_layout_start.php'; ?>
 
-<div class="container client-account">
+<div class="client-account">
   <h2>My Account</h2>
   <p><a href="<?= BASE_URL ?>client/dashboard">⬅ Back</a></p>
 
@@ -120,6 +119,6 @@
     const allowed = ['profile', 'password', 'security'];
     activate(allowed.includes(hash) ? hash : 'profile');
   </script>
-</div>
+ </div>
 
-<?php require __DIR__ . '/../partials/footer.php'; ?>
+<?php require __DIR__ . '/_layout_end.php'; ?>

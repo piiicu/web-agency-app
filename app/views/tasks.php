@@ -20,16 +20,11 @@ function tasks_url(array $params = []): string {
 
 ?>
 
-<?php require __DIR__ . '/partials/head.php'; ?>
-<div class="container">
+<?php require __DIR__ . '/admin/_layout_start.php'; ?>
 
-<div class="layout">
-  <?php require __DIR__ . '/admin/_sidebar.php'; ?>
-
-  <main class="content">
-    <div class="page-header">
-          <h2>Internal Tasks</h2>
-    </div>
+<div class="page-header">
+  <h2>Internal Tasks</h2>
+</div>
     <!-- Formular adăugare task -->
     <form method="POST" action="<?= BASE_URL ?>tasks" style="margin-bottom:15px;">
         <input class="input" type="text" name="title" placeholder="Task nou" required>
@@ -207,8 +202,4 @@ function tasks_url(array $params = []): string {
 
     <script>const BASE_URL = "<?= BASE_URL ?>";</script>
 
-  </main>
-</div>
-
-</div>
-<?php require __DIR__ . '/partials/footer.php'; ?>
+<?php require __DIR__ . '/admin/_layout_end.php'; ?>

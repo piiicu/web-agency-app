@@ -1,0 +1,229 @@
+/* App shell (layout only). Keeps all existing components intact. */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.app-content {
+  /* keeps existing page layouts working */
+}
+
+/* Left sidebar (desktop) */
+.app-sidebar {
+  width: 300px;
+  flex: 0 0 300px;
+  border-right: 1px solid rgba(17, 24, 39, 0.10);
+  background: #fff;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  order: -1; /* move sidebar to the left without changing markup */
+}
+
+/* Old sidebar styles compatibility (admin/_sidebar.php includes <aside class="sidebar">) */
+.app-sidebar .sidebar {
+  width: auto;
+  border: 0;
+  border-radius: 0;
+  padding: 14px;
+  background: transparent;
+}
+
+/* Mobile top bar */
+.app-topbar {
+  display: none;
+}
+
+.app-topbar__inner {
+  height: 56px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.10);
+  background: #fff;
+}
+
+.app-topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+
+.app-topbar__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #2563eb;
+}
+
+.app-topbar__title {
+  font-size: 15px;
+}
+
+.app-topbar__menu {
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+/* Bottom nav */
+.app-bottomnav {
+  display: none;
+}
+
+.app-bottomnav__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  text-decoration: none;
+  color: #111827;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.app-bottomnav__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.app-bottomnav__item.is-active {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+/* Drawer (mobile sidebar) */
+.app-overlay {
+  display: none;
+}
+
+.app-sidebar__mobile-header {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-topbar {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .app-container {
+    padding: 14px;
+  }
+
+  .app-main {
+    /* space for topbar + bottom nav */
+    padding-bottom: 74px;
+  }
+
+  .app-bottomnav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 64px;
+    background: #fff;
+    border-top: 1px solid rgba(17, 24, 39, 0.10);
+    z-index: 60;
+  }
+
+  /* if fewer than 5 items, it will still look ok */
+  .app-bottomnav__label {
+    font-size: 11px;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    left: -320px;
+    top: 0;
+    height: 100vh;
+    width: 320px;
+    max-width: 90vw;
+    z-index: 80;
+    transition: left .22s ease;
+    border-right: 1px solid rgba(17, 24, 39, 0.12);
+    border-left: 0;
+    order: 0; /* irrelevant on mobile but keeps intent clear */
+  }
+
+  .app-sidebar.is-open {
+    left: 0;
+  }
+
+  .app-sidebar__mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.10);
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  .app-sidebar__mobile-title {
+    font-weight: 800;
+  }
+
+  .app-sidebar__close {
+    border: 1px solid rgba(17, 24, 39, 0.12);
+    background: #fff;
+    border-radius: 12px;
+    padding: 7px 10px;
+    cursor: pointer;
+  }
+
+  .app-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease;
+    z-index: 70;
+  }
+
+  .app-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-bottomnav__label {
+    display: none;
+  }
+}

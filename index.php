@@ -3,6 +3,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Remember-me support (simple, cookie-based session persistence).
+// Keep session data around longer so a persistent cookie can work.
+ini_set('session.gc_maxlifetime', (string)(60 * 60 * 24 * 30)); // 30 days
 
 session_start();
 
@@ -62,6 +65,12 @@ if (in_array($route, $adminOnlyRoutes, true)) {
 // LOGIN - AUTH
 if ($route === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     (new AuthController())->login();
+    exit;
+}
+
+// FORGOT PASSWORD
+if ($route === 'forgot-password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new AuthController())->forgotPasswordSubmit();
     exit;
 }
 
@@ -420,6 +429,7 @@ if ($route === 'client/delete-account' && $_SERVER['REQUEST_METHOD'] === 'POST')
 
 $routes = [
     'login'     => 'login.php',
+    'forgot-password' => 'account/forgot_password.php',
 ];
 
 if (!isset($routes[$route])) {

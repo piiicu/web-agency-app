@@ -273,3 +273,50 @@
     initAllChatSearch();
   }
 })();
+
+// Mobile sidebar drawer (safe, no dependencies)
+(function () {
+  function initDrawer() {
+    const shell = document.querySelector('[data-app-shell]');
+    if (!shell) return;
+
+    const sidebar = shell.querySelector('[data-sidebar]');
+    const overlay = shell.querySelector('[data-sidebar-overlay]');
+    if (!sidebar || !overlay) return;
+
+    const openBtns = shell.querySelectorAll('[data-sidebar-open]');
+    const closeBtns = shell.querySelectorAll('[data-sidebar-close]');
+
+    function open() {
+      sidebar.classList.add('is-open');
+      overlay.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function close() {
+      sidebar.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    openBtns.forEach(btn => btn.addEventListener('click', open));
+    closeBtns.forEach(btn => btn.addEventListener('click', close));
+    overlay.addEventListener('click', close);
+
+    // ESC to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+    });
+
+    // Close when resizing to desktop
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 980) close();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDrawer);
+  } else {
+    initDrawer();
+  }
+})();
