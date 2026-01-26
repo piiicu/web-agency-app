@@ -60,8 +60,9 @@ class AuthController
         $new2 = (string)($_POST['new_password_confirm'] ?? '');
 
         // unde redirectăm după eroare/succes (în funcție de cine a trimis formularul)
+        // Adminul schimbă parola direct din Settings (tab-ul #password)
         $fallback = (Auth::role() === 'admin')
-            ? (BASE_URL . 'admin/change-password')
+            ? (BASE_URL . 'admin/settings#password')
             : (BASE_URL . 'client/account#password');
 
 

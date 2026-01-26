@@ -1,4 +1,5 @@
 <?php require __DIR__ . '/_layout_start.php'; ?>
+<?php $isAdmin = (Auth::role() === 'admin'); ?>
 
 <h2 class="page-title">Settings</h2>
 
@@ -13,21 +14,48 @@
 <?php endif; ?>
 
 <div class="tabs">
-  <button class="tab-btn" data-tab="users">Users</button>
+  <?php if ($isAdmin): ?>
+    <button class="tab-btn" data-tab="users">Users</button>
+  <?php endif; ?>
   <button class="tab-btn" data-tab="password">Change password</button>
   <button class="tab-btn" data-tab="profile">Editează profilul</button>
 </div>
 
-<div id="users" class="tab-panel">
-  <h3 class="section-title">Users</h3>
-  <ul>
-    <li><a href="<?= BASE_URL ?>admin/users">Users (create clients / invite links)</a></li>
-  </ul>
-</div>
+<?php if ($isAdmin): ?>
+  <div id="users" class="tab-panel">
+    <h3 class="section-title">Users</h3>
+
+    <?php
+      // Reuse the same panel used on the dedicated Admin -> Users page.
+      $redirectTarget = 'settings';
+      require __DIR__ . '/users/panel.php';
+    ?>
+  </div>
+<?php endif; ?>
 
 <div id="password" class="tab-panel">
   <h3 class="section-title">Change my password</h3>
-  <p><a href="<?= BASE_URL ?>admin/change-password">Deschide pagina de schimbare parolă</a></p>
+
+  <div class="card">
+    <form method="POST" action="<?= BASE_URL ?>admin/change-password">
+      <div class="form-row">
+        <label class="label">Old password</label><br>
+        <input class="input" type="password" name="current_password" required>
+      </div>
+
+      <div class="form-row">
+        <label class="label">New password</label><br>
+        <input class="input" type="password" name="new_password" required>
+      </div>
+
+      <div class="form-row">
+        <label class="label">Confirm new password</label><br>
+        <input class="input" type="password" name="new_password_confirm" required>
+      </div>
+
+      <button class="btn" type="submit">Update password</button>
+    </form>
+  </div>
 </div>
 
 <div id="profile" class="tab-panel">
@@ -71,9 +99,10 @@
     if (location.hash !== '#' + tab) history.replaceState(null, '', '#'+tab);
   }
 
-  const hash = (location.hash || '#users').replace('#', '');
-  const allowed = ['users','password','profile'];
-  activate(allowed.includes(hash) ? hash : 'users');
+  const defaultTab = <?= $isAdmin ? "'users'" : "'password'" ?>;
+  const hash = (location.hash || ('#' + defaultTab)).replace('#', '');
+  const allowed = <?= $isAdmin ? "['users','password','profile']" : "['password','profile']" ?>;
+  activate(allowed.includes(hash) ? hash : defaultTab);
 
   buttons.forEach(btn => btn.addEventListener('click', () => activate(btn.dataset.tab)));
 </script>

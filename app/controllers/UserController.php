@@ -19,12 +19,16 @@ class UserController
     {
         global $pdo;
 
+        $redirect = (($_POST['redirect'] ?? '') === 'settings')
+            ? (BASE_URL . "admin/settings#users")
+            : (BASE_URL . "admin/users");
+
         $name  = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
 
         if ($name === '' || $email === '') {
             $_SESSION['flash_error'] = 'Numele si email-ul sunt obligatorii.';
-            header("Location: " . BASE_URL . "admin/users");
+            header("Location: " . $redirect);
             exit;
         }
 
@@ -33,7 +37,7 @@ class UserController
         $stmt->execute([$email]);
         if ($stmt->fetchColumn()) {
             $_SESSION['flash_error'] = 'Email deja este înregistrat';
-            header("Location: " . BASE_URL . "admin/users");
+            header("Location: " . $redirect);
             exit;
         }
 
@@ -58,7 +62,7 @@ class UserController
 
         $_SESSION['invite_link'] = $link;
         $_SESSION['flash_success'] = 'Client created. Copy invite link and send it to the client.';
-        header("Location: " . BASE_URL . "admin/users");
+        header("Location: " . $redirect);
         exit;
     }
 
@@ -66,18 +70,22 @@ class UserController
     {
         global $pdo;
 
+        $redirect = (($_POST['redirect'] ?? '') === 'settings')
+            ? (BASE_URL . "admin/settings#users")
+            : (BASE_URL . "admin/users");
+
         Auth::requireRole(['admin']); // doar admin poate genera invite
 
         $userId = (int)($_POST['user_id'] ?? 0);
         if ($userId <= 0) {
-            header("Location: " . BASE_URL . "admin/users");
+            header("Location: " . $redirect);
             exit;
         }
 
         // opțional: nu genera invite pentru contul cu care ești logat
         if ($userId === Auth::id()) {
             $_SESSION['flash_error'] = 'Nu poți genera invite pentru contul curent.';
-            header("Location: " . BASE_URL . "admin/users");
+            header("Location: " . $redirect);
             exit;
         }
 
@@ -86,7 +94,7 @@ class UserController
         $stmt->execute([$userId]);
         if (!$stmt->fetchColumn()) {
             $_SESSION['flash_error'] = 'User not found.';
-            header("Location: " . BASE_URL . "admin/users");
+            header("Location: " . $redirect);
             exit;
         }
 
@@ -94,7 +102,7 @@ class UserController
 
         $_SESSION['invite_link'] = $link;
         $_SESSION['flash_success'] = 'Invite link generated.';
-        header("Location: " . BASE_URL . "admin/users");
+        header("Location: " . $redirect);
         exit;
     }
 
@@ -185,6 +193,10 @@ class UserController
     {
         global $pdo;
 
+        $redirect = (($_POST['redirect'] ?? '') === 'settings')
+            ? (BASE_URL . "admin/settings#users")
+            : (BASE_URL . "admin/users");
+
         Auth::requireRole(['admin']);
 
         $targetId = (int)($_POST['id'] ?? 0);
@@ -196,7 +208,7 @@ class UserController
         // nu te poți dezactiva pe tine
         if ($targetId === Auth::id()) {
             $_SESSION['flash_error'] = 'Nu poți dezactiva contul cu care ești logat.';
-            header("Location: " . BASE_URL . "admin/users");
+            header("Location: " . $redirect);
             exit;
         }
 
@@ -204,7 +216,7 @@ class UserController
         $stmt->execute([$targetId]);
 
         $_SESSION['flash_success'] = 'Utilizator dezactivat.';
-        header("Location: " . BASE_URL . "admin/users");
+        header("Location: " . $redirect);
         exit;
     }
 }

@@ -323,7 +323,7 @@ if ($route === 'set-password' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 // ADMIN: change own password
 if ($route === 'admin/change-password' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin']);
-    require __DIR__ . '/app/views/admin/change_password.php';
+    header('Location: ' . BASE_URL . 'admin/settings#password');
     exit;
 }
 

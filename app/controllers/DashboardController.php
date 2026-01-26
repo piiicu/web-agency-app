@@ -37,6 +37,17 @@ class DashboardController
             exit('User not found');
         }
 
+        // Admin-only: preload users list for Settings -> Users tab
+        $users = [];
+        $inviteLink = null;
+        if (Auth::role() === 'admin') {
+            $users = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY id DESC")
+                ->fetchAll(PDO::FETCH_ASSOC);
+
+            $inviteLink = $_SESSION['invite_link'] ?? null;
+            unset($_SESSION['invite_link']);
+        }
+
         require __DIR__ . '/../views/admin/settings.php';
     }
 
