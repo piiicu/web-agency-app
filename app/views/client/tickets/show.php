@@ -2,7 +2,15 @@
 
 <div class="client-ticket">
 
-  <p><a href="<?= BASE_URL ?>client/tickets">⬅ Înapoi la Ticket-ele mele</a></p>
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Ticket #<?= (int)$ticket['id'] ?></h1>
+      <p class="page-header__subtitle"><?= htmlspecialchars($ticket['subject']) ?></p>
+    </div>
+    <div class="page-header__actions">
+      <a class="btn btn-ghost" href="<?= BASE_URL ?>client/tickets">⬅ Înapoi la Ticket-ele mele</a>
+    </div>
+  </div>
 
   <?php
   // Map attachments by message_id
@@ -66,19 +74,18 @@
   <div class="client-ticket__wrap">
 
     <div class="client-ticket__head">
-      <h2 style="margin:0 0 6px;">#<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h2>
-
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <div class="form-inline">
         <span class="badge <?= ($ticket['status'] === 'open') ? 'open' : 'closed' ?>">
           <?= ($ticket['status'] === 'open') ? '🟢 Deschis' : '🔴 Închis' ?>
         </span>
 
-        <span style="color:#6b7280;">
+        <span class="muted">
           Creat: <?= htmlspecialchars($ticket['created_at']) ?>
         </span>
       </div>
     </div>
 
+    <div class="ticket-chat">
     <!-- CHAT -->
     <!-- Search bar chat -->
     <div class="chat-search">
@@ -153,29 +160,34 @@
     </div>
 
     <?php if ($ticket['status'] !== 'open'): ?>
-      <div class="client-ticket__reply client-ticket__reply--closed">
+      <div class="client-ticket__reply client-ticket__reply--closed chat-compose">
         <b>Ticket închis.</b> Nu mai poți trimite mesaje pe acest ticket.
       </div>
     <?php else: ?>
-      <div class="client-ticket__reply">
-        <h3 style="margin-top:0;">Răspuns nou</h3>
+      <div class="client-ticket__reply chat-compose">
+        <h3 class="h3" style="margin-top:0;">Răspuns nou</h3>
 
         <form method="POST" action="<?= BASE_URL ?>client/ticket-message" enctype="multipart/form-data">
           <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
 
-          <div style="margin-bottom:10px;">
-            <textarea class="client-ticket__textarea" name="message" placeholder="Scrie mesajul..." required></textarea>
+          <div class="form-row">
+            <label class="label">Mesaj</label>
+            <textarea class="textarea" name="message" placeholder="Scrie mesajul..." required></textarea>
           </div>
 
-          <div style="margin-bottom:12px;">
-            <label><b>Atașamente</b> (jpg/png/webp/pdf, max 8MB)</label><br>
+          <div class="form-row">
+            <label class="label">Atașamente <span class="help">(jpg/png/webp/pdf, max 8MB)</span></label>
             <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
           </div>
 
-          <button class="btn" type="submit">Trimite</button>
+          <div class="form-actions">
+            <button class="btn" type="submit">Trimite</button>
+          </div>
         </form>
       </div>
     <?php endif; ?>
+
+    </div><!-- /.ticket-chat -->
 
   </div>
 

@@ -1,24 +1,29 @@
 <?php require __DIR__ . '/../_layout_start.php'; ?>
 
-<h2>Ticket #<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h2>
-<p><a href="<?= BASE_URL ?>admin/tickets">⬅ Back to inbox</a></p>
+<div class="ticket-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-header__title">Ticket #<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h1>
+      <p class="page-header__subtitle">Client: <b><?= htmlspecialchars($ticket['client_name']) ?></b></p>
+    </div>
 
-<p>Client: <b><?= htmlspecialchars($ticket['client_name']) ?></b></p>
+    <div class="page-header__actions">
+      <a class="btn btn-ghost" href="<?= BASE_URL ?>admin/tickets">⬅ Back to inbox</a>
 
-<form method="POST" action="<?= BASE_URL ?>admin/ticket-status" style="margin: 10px 0;">
+      <form method="POST" action="<?= BASE_URL ?>admin/ticket-status" class="ticket-status-form">
   <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
-  <label>Status:</label>
-  <select name="status">
+  <label class="label" for="ticket_status">Status</label>
+  <select id="ticket_status" name="status" class="select" style="width:auto; min-width: 160px;">
     <?php foreach (['open','resolved'] as $s): ?>
       <option value="<?= $s ?>" <?= $ticket['status'] === $s ? 'selected' : '' ?>>
         <?= $s ?>
       </option>
     <?php endforeach; ?>
   </select>
-  <button type="submit">Update</button>
-</form>
-
-<hr>
+  <button class="btn" type="submit">Update</button>
+      </form>
+    </div>
+  </div>
 
 <?php
   // Build a map of attachments by message_id
@@ -52,6 +57,8 @@
   </div>
 </div>
 
+
+<div class="ticket-chat">
 
 <!-- MOD 1: data-ticket-id + data-role -->
 <div class="chat-thread" data-chat-thread data-chat-container data-ticket-id="<?= (int)$ticket['id'] ?>" data-role="admin">
@@ -174,33 +181,32 @@
       </div>
     </div>
   <?php endif; ?>
+
+<!-- Composer -->
 </div>
 
-<hr>
+<div class="card chat-compose" style="margin-top:16px;">
+  <h3 class="h3">Scrie mesajul</h3>
 
-<div class="ticket-compose-header">
-  <h3>Scrie mesajul</h3>
+  <form method="POST" action="<?= BASE_URL ?>admin/ticket-message" enctype="multipart/form-data">
+    <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
+
+    <textarea class="textarea" name="body" placeholder="Write message / internal note..." required></textarea>
+
+    <div class="form-inline" style="margin: 10px 0 12px;">
+      <label class="form-inline">
+        <input type="checkbox" name="is_internal" value="1">
+        <span>Internal note (client can&#39;t see)</span>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
+      <button class="btn" type="submit">Send</button>
+    </div>
+  </form>
 </div>
 
-<form method="POST" action="<?= BASE_URL ?>admin/ticket-message" enctype="multipart/form-data">
-  <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
-
-  <textarea name="body" placeholder="Write message / internal note..." style="width: 70%; height: 120px;" required></textarea>
-
-  <br><br>
-
-  <label>
-    <input type="checkbox" name="is_internal" value="1">
-    Internal note (client can't see)
-  </label>
-
-  <br><br>
-
-  <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
-
-  <br><br>
-
-  <button type="submit">Send</button>
-</form>
+</div>
 
 <?php require __DIR__ . '/../_layout_end.php'; ?>

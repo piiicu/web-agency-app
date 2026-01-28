@@ -1,4 +1,55 @@
 /* Chat (WhatsApp-like) */
+.chat-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,.06);
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+
+.chat-search__input {
+  flex: 1 1 260px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  background: #fff;
+}
+.chat-search__input:focus {
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.chat-search__meta {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chat-search__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-search__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 900;
+}
+.chat-search__btn:hover {
+  background: rgba(17, 24, 39, 0.04);
+}
+
 .chat-thread {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
@@ -6,6 +57,39 @@
   padding: 14px;
   height: min(60vh, 520px);
   overflow: auto;
+}
+
+/* Ticket pages: make the composer feel app-like */
+.ticket-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticket-chat .chat-compose {
+  /* normal desktop flow */
+}
+
+@media (max-width: 980px) {
+  /* Keep the reply form accessible above the bottom nav */
+  .ticket-chat .chat-compose {
+    position: sticky;
+    bottom: 74px; /* app-main has padding-bottom:74px and bottom nav is 64px */
+    z-index: 40;
+    box-shadow: 0 -10px 30px rgba(0,0,0,.08);
+  }
+
+  /* Give more room to messages on mobile */
+  .ticket-chat .chat-thread {
+    height: auto;
+    max-height: calc(100dvh - 320px);
+  }
+
+  .chat-search {
+    position: sticky;
+    top: 58px; /* under topbar */
+    z-index: 45;
+  }
 }
 
 .chat-empty {
@@ -110,7 +194,15 @@
   align-self: flex-end;
   font-size: 13px;
   color: #111;
-  text-decoration: underline;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(255,255,255,.7);
+}
+
+.chat-attachment-link:hover {
+  background: rgba(17, 24, 39, 0.04);
 }
 
 .chat-file {

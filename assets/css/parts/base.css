@@ -1,19 +1,57 @@
-/* Base */
-* {
-  box-sizing: border-box;
+/* Base + design tokens
+   NOTE: kept intentionally lightweight to avoid breaking existing pages.
+*/
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+
+  --text: #0f172a;
+  --muted: #64748b;
+
+
+  --border: rgba(17, 24, 39, 0.10);
+  --border-strong: rgba(17, 24, 39, 0.16);
+
+  --primary: #635bff;
+  --primary-hover: #4f46ff;
+  --primary-soft: #eef2ff;
+  --sidebar-bg: #f3f4f6;
+  --sidebar-border: #e5e7eb;
+  --primary-600: #4f46ff;
+
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 4px 12px rgba(0,0,0,.06);
+  --shadow-md: 0 14px 30px rgba(0,0,0,.10);
 }
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f6f7f9;
-  color: #111;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-a {
-  color: inherit;
-}
+
+a { color: inherit; }
+
 .container {
   max-width: 1280px;
   margin: 0 auto;
   padding: 18px;
 }
 
+/* Better default focus (won't affect existing UI negatively) */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(99, 91, 255, 0.25);
+  outline-offset: 2px;
+}

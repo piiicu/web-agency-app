@@ -1,2 +1,47 @@
-/* Client-specific pages */
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
 
+  --text: #0f172a;
+  --muted: #64748b;
+
+  /* Stripe-ish accent */
+  --primary: #635bff;
+  --primary-hover: #4f46ff;
+  --primary-600: #4f46ff;
+  --primary-soft: #eef2ff;
+
+  --danger: #ef4444;
+
+  --sidebar-bg: #f3f4f6;
+  --sidebar-border: #e5e7eb;
+
+  --radius: 16px;
+  --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a { color: inherit; }
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+input, textarea, select, button { font: inherit; }
+
+:focus-visible {
+  outline: 3px solid rgba(99, 91, 255, 0.25);
+  outline-offset: 2px;
+  border-radius: 12px;
+}

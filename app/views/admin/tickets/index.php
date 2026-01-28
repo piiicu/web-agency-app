@@ -99,7 +99,8 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
     Șterge tichetele selectate
   </button>
 
-  <table id="ticketsTable" class="tickets-table">
+  <div class="tickets-table-wrap" aria-label="Tickets table">
+    <table id="ticketsTable" class="tickets-table">
     <thead>
       <tr>
         <th class="col-drag">⇅</th>
@@ -156,13 +157,69 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
               <?php endif; ?>
             </div>
           </td>
-          <td><?= htmlspecialchars($t['status']) ?></td>
+          <td>
+            <?php $st = (string)($t['status'] ?? ''); ?>
+            <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars($st) ?></span>
+          </td>
           <td><?= htmlspecialchars($t['last_public_message'] ?? '') ?></td>
           <td><?= htmlspecialchars($t['updated_at'] ?? '') ?></td>
         </tr>
       <?php endforeach; ?>
     </tbody>
-  </table>
+    </table>
+  </div>
+
+  <!-- Mobile-friendly cards (table is hidden on small screens via CSS) -->
+  <div class="tickets-cards" aria-label="Tickets cards">
+    <?php foreach ($tickets as $t): ?>
+      <?php $st = (string)($t['status'] ?? ''); ?>
+      <div class="ticket-card" data-ticket-id="<?= (int)$t['id'] ?>">
+        <div class="ticket-card__top">
+          <div class="ticket-card__meta">
+            <div class="ticket-card__id">
+              <label style="display:inline-flex;align-items:center;gap:10px;">
+                <input class="rowCheck" type="checkbox" name="ticket_ids[]" value="<?= (int)$t['id'] ?>" />
+                <a href="<?= htmlspecialchars(BASE_URL . 'admin/ticket' . $idSep . (int)$t['id']) ?>">#<?= (int)$t['id'] ?></a>
+              </label>
+            </div>
+            <div class="ticket-card__client"><b>Client:</b> <?= htmlspecialchars($t['client_name']) ?></div>
+          </div>
+          <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars($st) ?></span>
+        </div>
+
+        <div class="ticket-card__subject"><?= htmlspecialchars($t['subject']) ?></div>
+        <div class="ticket-card__last"><b>Ultimul mesaj:</b> <?= htmlspecialchars($t['last_public_message'] ?? '') ?></div>
+        <div class="ticket-card__client"><b>Updated:</b> <?= htmlspecialchars($t['updated_at'] ?? '') ?></div>
+
+        <div class="ticket-card__actions">
+          <a class="btn" href="<?= htmlspecialchars(BASE_URL . 'admin/ticket' . $idSep . (int)$t['id']) ?>">Deschide</a>
+
+          <?php if ($tab !== 'deleted'): ?>
+            <button
+              class="btn"
+              type="submit"
+              name="ticket_id"
+              value="<?= (int)$t['id'] ?>"
+              formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-delete') ?>"
+              formmethod="post"
+              onclick="return confirm('Ștergi tichetul #<?= (int)$t['id'] ?>?')">
+              Șterge
+            </button>
+          <?php else: ?>
+            <button
+              class="btn"
+              type="submit"
+              name="ticket_id"
+              value="<?= (int)$t['id'] ?>"
+              formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-restore') ?>"
+              formmethod="post">
+              Restore
+            </button>
+          <?php endif; ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
 </form>
 
 <script>
