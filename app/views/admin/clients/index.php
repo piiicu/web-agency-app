@@ -1,18 +1,18 @@
 <?php require __DIR__ . '/../_layout_start.php'; ?>
 
-<h2 class="page-title">Clients</h2>
+<h2 class="page-title">Clienți</h2>
 
 <?php if (empty($clients)): ?>
-  <p>No clients found.</p>
+  <p>Nu s-au găsit clienți.</p>
 <?php else: ?>
   <table class="table">
     <thead>
       <tr>
         <th>ID</th>
-        <th>Name</th>
+        <th>Nume</th>
         <th>Email</th>
-        <th>Tickets</th>
-        <th>Actions</th>
+        <th>Tichete</th>
+        <th>Acțiuni</th>
       </tr>
     </thead>
     <tbody>
@@ -23,9 +23,9 @@
           <td><?= htmlspecialchars($c['email']) ?></td>
           <td><?= (int)($c['tickets_count'] ?? 0) ?></td>
           <td>
-            <a class="btn btn--secondary"
+            <a class="btn"
                href="<?= BASE_URL ?>admin/client&id=<?= (int)$c['id'] ?>">
-              View
+              Vezi
             </a>
           </td>
         </tr>

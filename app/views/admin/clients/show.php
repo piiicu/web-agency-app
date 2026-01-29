@@ -44,18 +44,18 @@
 </form>
 
 
-<h3 class="section-title">Client tickets</h3>
+<h3 class="section-title">Tichete clienți</h3>
 
 <?php if (empty($tickets)): ?>
-  <p>This client has no tickets.</p>
+  <p>Acest client nu are tichete.</p>
 <?php else: ?>
   <table class="table">
     <thead>
       <tr>
         <th>ID</th>
-        <th>Subject</th>
+        <th>Subiect</th>
         <th>Status</th>
-        <th>Updated</th>
+        <th>Actualizat</th>
         <th></th>
       </tr>
     </thead>
@@ -67,9 +67,9 @@
           <td><?= htmlspecialchars($t['status']) ?></td>
           <td><?= htmlspecialchars($t['updated_at']) ?></td>
           <td>
-            <a class="btn btn--secondary"
+            <a class="btn"
                href="<?= BASE_URL ?>admin/ticket&id=<?= (int)$t['id'] ?>">
-              Open
+              Deschide
             </a>
           </td>
         </tr>

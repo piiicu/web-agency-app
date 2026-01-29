@@ -20,7 +20,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
 ?>
 
 <div class="tickets-header">
-  <h2 class="tickets-title">Tickets Inbox</h2>
+  <h2 class="tickets-title">Inbox tichete</h2>
 <!-- Search -->
   <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets') ?>" class="tickets-search">
     <?php if ($isRouteMode): ?>
@@ -77,9 +77,9 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
       <input name="client" type="text" placeholder="Client">
       <select name="status">
         <option value="">Status (toate)</option>
-        <option value="open">open</option>
-        <option value="resolved">resolved</option>
-        <option value="deleted">deleted</option>
+        <option value="open">deschis</option>
+        <option value="resolved">rezolvat</option>
+        <option value="deleted">șters</option>
       </select>
 
       <div class="modal-actions">
@@ -107,10 +107,10 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
         <th class="col-check"><input id="checkAll" type="checkbox" /></th>
         <th class="col-id">ID</th>
         <th>Client</th>
-        <th>Subject</th>
+        <th>Subiect</th>
         <th class="col-status">Status</th>
         <th>Ultimul mesaj</th>
-        <th class="col-updated">Updated</th>
+        <th class="col-updated">Actualizat</th>
       </tr>
     </thead>
     <tbody>
@@ -152,7 +152,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
                   value="<?= (int)$t['id'] ?>"
                   formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-restore') ?>"
                   formmethod="post">
-                  Restore
+                  Revenire
                 </button>
               <?php endif; ?>
             </div>

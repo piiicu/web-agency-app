@@ -23,23 +23,23 @@
     ?>
     <a class="app-bottomnav__item <?= $active('admin/dashboard') ?>" href="<?= BASE_URL ?>admin/dashboard" aria-label="Dashboard">
       <span class="app-bottomnav__icon">🏠</span>
-      <span class="app-bottomnav__label">Home</span>
+      <span class="app-bottomnav__label">Acasă</span>
     </a>
     <a class="app-bottomnav__item <?= $active('admin/tickets') ?>" href="<?= BASE_URL ?>admin/tickets" aria-label="Tickets">
       <span class="app-bottomnav__icon">🎫</span>
-      <span class="app-bottomnav__label">Tickets</span>
+      <span class="app-bottomnav__label">Tichete</span>
     </a>
     <a class="app-bottomnav__item <?= $active('admin/clients') ?>" href="<?= BASE_URL ?>admin/clients" aria-label="Clients">
       <span class="app-bottomnav__icon">👥</span>
-      <span class="app-bottomnav__label">Clients</span>
+      <span class="app-bottomnav__label">Clienți</span>
     </a>
     <a class="app-bottomnav__item <?= $active('admin/settings') ?>" href="<?= BASE_URL ?>admin/settings" aria-label="Settings">
       <span class="app-bottomnav__icon">⚙️</span>
-      <span class="app-bottomnav__label">Settings</span>
+      <span class="app-bottomnav__label">Setări</span>
     </a>
     <button class="app-bottomnav__item" type="button" data-sidebar-open aria-label="Menu">
       <span class="app-bottomnav__icon">☰</span>
-      <span class="app-bottomnav__label">Menu</span>
+      <span class="app-bottomnav__label">Meniu</span>
     </button>
   </nav>
 </div>

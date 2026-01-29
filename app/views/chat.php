@@ -13,7 +13,7 @@ if (!empty($messages)) {
 <div class="card ichat-card">
   <div class="ichat-headerbar">
     <div>
-      <h2>Chat</h2>
+      <h2>Chat intern</h2>
       <div class="ichat-subtitle">Chat intern între administratori (fără clienți).</div>
     </div>
     <a href="<?= BASE_URL ?>admin/dashboard" class="btn">⬅ Dashboard</a>

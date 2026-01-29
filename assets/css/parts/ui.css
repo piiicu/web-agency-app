@@ -364,13 +364,13 @@ a.btn:active,
 }
 
 /* Cards */
-.card {
+/* .card {
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 16px;
   background: var(--sidebar-bg);
   padding: 16px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-}
+} */
 .card-header {
   display: flex;
   align-items: flex-start;
@@ -456,7 +456,6 @@ a.btn:active,
   border-radius: 16px;
   padding: 12px;
   background: var(--sidebar-bg);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
 }
 .sidebar a {
   display: block;
@@ -581,6 +580,7 @@ a.btn:active,
   display: flex;
   gap: 18px;
   align-items: center;
+  padding: 24px;
 }
 .pill {
   display: inline-block;
@@ -590,6 +590,10 @@ a.btn:active,
   background: var(--sidebar-bg);
   margin-top: 8px;
   margin-right: 8px;
+}
+
+.profile-row .mt-14 a.btn {
+  margin-top: 24px;
 }
 
 /* Badges (status / labels) */
@@ -791,6 +795,9 @@ h2 {
 /* Helpers */
 .mt-14 {
   margin-top: 14px;
+}
+.mt-32 {
+  margin-top: 32px;
 }
 .flex-1 {
   flex: 1;

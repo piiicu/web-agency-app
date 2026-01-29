@@ -41,8 +41,8 @@
         <?php endif; ?>
       </div>
 
-      <div class="mt-14">
-        <a href="<?= BASE_URL ?>admin/settings#profile">✏️ Editează profilul în Settings</a>
+      <div class="mt-14 mt-32">
+        <a href="<?= BASE_URL ?>admin/settings#profile" class="btn">✏️ Editează profilul</a>
       </div>
     </div>
   </div>

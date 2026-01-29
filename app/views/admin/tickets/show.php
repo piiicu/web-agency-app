@@ -3,12 +3,12 @@
 <div class="ticket-page">
   <div class="page-header">
     <div>
-      <h1 class="page-header__title">Ticket #<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h1>
+      <h1 class="page-header__title">Tichet #<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h1>
       <p class="page-header__subtitle">Client: <b><?= htmlspecialchars($ticket['client_name']) ?></b></p>
     </div>
 
     <div class="page-header__actions">
-      <a class="btn btn-ghost" href="<?= BASE_URL ?>admin/tickets">⬅ Back to inbox</a>
+      <a class="btn btn-ghost" href="<?= BASE_URL ?>admin/tickets">⬅ Înapoi la inbox</a>
 
       <form method="POST" action="<?= BASE_URL ?>admin/ticket-status" class="ticket-status-form">
   <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
@@ -20,7 +20,7 @@
       </option>
     <?php endforeach; ?>
   </select>
-  <button class="btn" type="submit">Update</button>
+  <button class="btn" type="submit">Actualizează</button>
       </form>
     </div>
   </div>
@@ -191,18 +191,18 @@
   <form method="POST" action="<?= BASE_URL ?>admin/ticket-message" enctype="multipart/form-data">
     <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
 
-    <textarea class="textarea" name="body" placeholder="Write message / internal note..." required></textarea>
+    <textarea class="textarea" name="body" placeholder="Scrie mesaj / notă internă…" required></textarea>
 
     <div class="form-inline" style="margin: 10px 0 12px;">
       <label class="form-inline">
         <input type="checkbox" name="is_internal" value="1">
-        <span>Internal note (client can&#39;t see)</span>
+        <span>Mesaje interne (clientul nu vede mesajul)</span>
       </label>
     </div>
 
     <div class="form-actions">
       <input type="file" name="attachments[]" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
-      <button class="btn" type="submit">Send</button>
+      <button class="btn" type="submit">Trimite</button>
     </div>
   </form>
 </div>

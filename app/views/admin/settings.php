@@ -1,7 +1,7 @@
 <?php require __DIR__ . '/_layout_start.php'; ?>
 <?php $isAdmin = (Auth::role() === 'admin'); ?>
 
-<h2 class="page-title">Settings</h2>
+<h2 class="page-title">Setări</h2>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
   <div class="flash flash--error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
@@ -15,15 +15,15 @@
 
 <div class="tabs">
   <?php if ($isAdmin): ?>
-    <button class="tab-btn" data-tab="users">Users</button>
+    <button class="tab-btn" data-tab="users">Utilizatori</button>
   <?php endif; ?>
-  <button class="tab-btn" data-tab="password">Change password</button>
+  <button class="tab-btn" data-tab="password">Schimbă parola</button>
   <button class="tab-btn" data-tab="profile">Editează profilul</button>
 </div>
 
 <?php if ($isAdmin): ?>
   <div id="users" class="tab-panel">
-    <h3 class="section-title">Users</h3>
+    <h3 class="section-title">Utilizatori</h3>
 
     <?php
       // Reuse the same panel used on the dedicated Admin -> Users page.
@@ -34,26 +34,26 @@
 <?php endif; ?>
 
 <div id="password" class="tab-panel">
-  <h3 class="section-title">Change my password</h3>
+  <h3 class="section-title">Schimbă parola</h3>
 
   <div class="card">
     <form method="POST" action="<?= BASE_URL ?>admin/change-password">
       <div class="form-row">
-        <label class="label">Old password</label><br>
+        <label class="label">Parola veche</label>
         <input class="input" type="password" name="current_password" required>
       </div>
 
       <div class="form-row">
-        <label class="label">New password</label><br>
+        <label class="label">Parola nouă</label>
         <input class="input" type="password" name="new_password" required>
       </div>
 
       <div class="form-row">
-        <label class="label">Confirm new password</label><br>
+        <label class="label">Confirmă noua parolă</label>
         <input class="input" type="password" name="new_password_confirm" required>
       </div>
 
-      <button class="btn" type="submit">Update password</button>
+      <button class="btn" type="submit">Actualizează parola</button>
     </form>
   </div>
 </div>
@@ -65,26 +65,26 @@
     <form method="POST" action="<?= BASE_URL ?>admin/profile" enctype="multipart/form-data">
 
       <div class="form-row">
-        <label class="label">Name</label><br>
+        <label class="label">Nume</label>
         <input class="input" name="name" value="<?= htmlspecialchars($me['name'] ?? '') ?>" required>
       </div>
 
       <div class="form-row">
-        <label class="label">Email</label><br>
+        <label class="label">Email</label>
         <input class="input" type="email" name="email" value="<?= htmlspecialchars($me['email'] ?? '') ?>" required>
       </div>
 
       <div class="form-row">
-        <label class="label">Phone</label><br>
+        <label class="label">Telefon</label>
         <input class="input" name="phone" value="<?= htmlspecialchars($me['phone'] ?? '') ?>">
       </div>
 
       <div class="form-row">
-        <label class="label">Avatar (jpg/png/webp, max 3MB)</label><br>
+        <label class="label">Poză profil (jpg/png/webp, max 3MB)</label>
         <input class="input" style="padding:8px 12px;" type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp">
       </div>
 
-      <button class="btn" type="submit">Save changes</button>
+      <button class="btn" type="submit">Salvează schimbările</button>
     </form>
   </div>
 </div>

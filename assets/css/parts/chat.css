@@ -254,7 +254,7 @@
    (evită conflict cu chat-ul din tichete)
    ============================ */
 
-.ichat-card { max-width: 980px; }
+/* .ichat-card { max-width: 980px; } */
 
 .ichat-headerbar{
   display:flex;

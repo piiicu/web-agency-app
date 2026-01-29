@@ -23,7 +23,7 @@ function tasks_url(array $params = []): string {
 <?php require __DIR__ . '/admin/_layout_start.php'; ?>
 
 <div class="page-header">
-  <h2>Internal Tasks</h2>
+  <h2>Task-uri interne</h2>
 </div>
     <!-- Formular adăugare task -->
     <form method="POST" action="<?= BASE_URL ?>tasks" style="margin-bottom:15px;">
@@ -78,7 +78,7 @@ function tasks_url(array $params = []): string {
 
         <input class="input" type="text" name="q" placeholder="Caută în De făcut..."
                value="<?= htmlspecialchars($q) ?>" style="width:340px;">
-        <button class="btn btn--secondary" type="submit">🔎 Caută</button>
+        <button class="btn" type="submit">🔎 Caută</button>
 
         <?php if (trim($q) !== ''): ?>
             <a href="<?= tasks_url(['tab'=>'pending','filter'=>$activeFilter]) ?>" style="margin-left:10px;">✖ Reset</a>
@@ -138,7 +138,7 @@ function tasks_url(array $params = []): string {
                                 <?php endfor; ?>
                             </select>
 
-                            <button class="btn btn--secondary" type="submit">💾</button>
+                            <button class="btn" type="submit">💾</button>
                         </form>
 
                         <!-- Delete -->
@@ -146,7 +146,7 @@ function tasks_url(array $params = []): string {
                               style="display:inline;"
                               onsubmit="return confirm('Ștergi task-ul?');">
                             <input type="hidden" name="id" value="<?= (int)$task['id'] ?>">
-                            <button class="btn btn--secondary" type="submit">🗑</button>
+                            <button class="btn" type="submit">🗑</button>
                         </form>
                     </li>
                 <?php endforeach; ?>
@@ -164,7 +164,7 @@ function tasks_url(array $params = []): string {
 
             <input class="input" type="text" name="q_done" placeholder="Caută în Rezolvate..."
                    value="<?= htmlspecialchars($q_done) ?>" style="width:340px;">
-            <button class="btn btn--secondary" type="submit">🔎</button>
+            <button class="btn" type="submit">🔎</button>
 
             <?php if (trim($q_done) !== ''): ?>
                 <a href="<?= tasks_url(['tab'=>'done']) ?>" style="margin-left:10px;">✖ Reset</a>
@@ -192,7 +192,7 @@ function tasks_url(array $params = []): string {
                               style="display:inline;"
                               onsubmit="return confirm('Ștergi task-ul?');">
                             <input type="hidden" name="id" value="<?= (int)$task['id'] ?>">
-                            <button class="btn btn--secondary" type="submit">🗑</button>
+                            <button class="btn" type="submit">🗑</button>
                         </form>
                     </li>
                 <?php endforeach; ?>
