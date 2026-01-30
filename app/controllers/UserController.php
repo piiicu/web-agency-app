@@ -50,7 +50,7 @@ class UserController
         global $pdo;
 
         $redirect = (($_POST['redirect'] ?? '') === 'settings')
-            ? (BASE_URL . "admin/settings#users")
+            ? (BASE_URL . "admin/settings&tab=users")
             : (BASE_URL . "admin/users");
 
         $name  = trim($_POST['name'] ?? '');
@@ -139,7 +139,7 @@ class UserController
         global $pdo;
 
         $redirect = (($_POST['redirect'] ?? '') === 'settings')
-            ? (BASE_URL . "admin/settings#users")
+            ? (BASE_URL . "admin/settings&tab=users")
             : (BASE_URL . "admin/users");
 
         Auth::requireRole(['admin']); // doar admin poate genera invite
@@ -310,7 +310,7 @@ class UserController
         global $pdo;
 
         $redirect = (($_POST['redirect'] ?? '') === 'settings')
-            ? (BASE_URL . "admin/settings#users")
+            ? (BASE_URL . "admin/settings&tab=users")
             : (BASE_URL . "admin/users");
 
         Auth::requireRole(['admin']);

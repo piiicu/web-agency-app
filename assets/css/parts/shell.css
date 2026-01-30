@@ -11,10 +11,10 @@
 }
 
 .app-container {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 18px;
-  background: #22a796;
+  background: #0f6d9a;
 }
 
 .app-content {
@@ -24,10 +24,10 @@
 
 /* Left sidebar (desktop) */
 .app-sidebar {
-  width: 250px;
-  flex: 0 0 250px;
+  width: 220px;
+  flex: 0 0 220px;
   /* border-right: 2px solid rgb(209 209 209); */
-  background: #058274;
+  background: #08193e;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -112,7 +112,7 @@
 }
 
 .app-bottomnav__item.is-active {
-  color: #1d4ed8;
+  color: #675dff;
   font-weight: 700;
   background: rgba(37, 99, 235, 0.08);
   border-radius: 14px;

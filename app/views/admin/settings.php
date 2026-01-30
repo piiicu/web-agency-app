@@ -31,8 +31,13 @@
 
     <?php
       // Reuse the same panel used on the dedicated Admin -> Users page.
+      // Important: we do NOT use URL hashes (#users) because they trigger
+      // native browser anchor scrolling. We keep the active tab in a query
+      // param (?route=admin/settings&tab=users).
+      // The controller translates this into a full URL that returns here
+      // with tab=users (without using a #hash).
       $redirectTarget = 'settings';
-      // require __DIR__ . '/users/panel.php';
+      require __DIR__ . '/users/panel.php';
     ?>
   </div>
 <?php endif; ?>
@@ -97,16 +102,29 @@
   const buttons = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.tab-panel');
 
+  function getTabFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('tab') || '').trim();
+  }
+
+  function setTabInQuery(tab) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    // Remove any stale hashes that may exist from older versions.
+    url.hash = '';
+    history.replaceState(null, '', url.toString());
+  }
+
   function activate(tab) {
     buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     panels.forEach(p => p.classList.toggle('active', p.id === tab));
-    if (location.hash !== '#' + tab) history.replaceState(null, '', '#'+tab);
+    setTabInQuery(tab);
   }
 
   const defaultTab = <?= $isAdmin ? "'users'" : "'password'" ?>;
-  const hash = (location.hash || ('#' + defaultTab)).replace('#', '');
+  const requested = getTabFromQuery() || defaultTab;
   const allowed = <?= $isAdmin ? "['users','password','profile']" : "['password','profile']" ?>;
-  activate(allowed.includes(hash) ? hash : defaultTab);
+  activate(allowed.includes(requested) ? requested : defaultTab);
 
   buttons.forEach(btn => btn.addEventListener('click', () => activate(btn.dataset.tab)));
 </script>
