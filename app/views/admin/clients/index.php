@@ -1,10 +1,15 @@
 <?php require __DIR__ . '/../_layout_start.php'; ?>
 
-<h2 class="page-title">Clienți</h2>
+<div class="page-header">
+  <div class="page-header__left">
+    <h2 class="page-header__title">Clienți</h2>
+  </div>
+</div>
 
 <?php if (empty($clients)): ?>
   <p>Nu s-au găsit clienți.</p>
 <?php else: ?>
+  <div class="table-wrap rtable">
   <table class="table">
     <thead>
       <tr>
@@ -32,6 +37,28 @@
       <?php endforeach; ?>
     </tbody>
   </table>
+
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="rtable-cards" aria-label="Lista clienți">
+    <?php foreach ($clients as $c): ?>
+      <div class="data-card">
+        <div class="data-card__top">
+          <div>
+            <p class="data-card__title" style="margin:0;">#<?= (int)$c['id'] ?> — <?= htmlspecialchars($c['name']) ?></p>
+            <div class="data-card__meta">
+              <div><b>Email:</b> <?= htmlspecialchars($c['email']) ?></div>
+              <div><b>Tichete:</b> <?= (int)($c['tickets_count'] ?? 0) ?></div>
+            </div>
+          </div>
+        </div>
+        <div class="data-card__actions">
+          <a class="btn" href="<?= BASE_URL ?>admin/client&id=<?= (int)$c['id'] ?>">Vezi</a>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
 <?php endif; ?>
 
 <?php require __DIR__ . '/../_layout_end.php'; ?>

@@ -1,6 +1,10 @@
 <?php require __DIR__ . '/_layout_start.php'; ?>
 
-<h2 class="page-title">Change my password</h2>
+<div class="page-header">
+  <div class="page-header__left">
+    <h2 class="page-header__title">Schimbă parola</h2>
+  </div>
+</div>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
   <div class="flash flash--error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
@@ -13,23 +17,25 @@
 <?php endif; ?>
 
 <div class="card">
-  <form method="POST" action="<?= BASE_URL ?>admin/change-password">
+  <form method="POST" action="<?= BASE_URL ?>admin/change-password" class="form-standard">
     <div class="form-row">
-      <label class="label">Old password</label><br>
+      <label class="label">Parola veche</label>
       <input class="input" type="password" name="current_password" required>
     </div>
 
     <div class="form-row">
-      <label class="label">New password</label><br>
+      <label class="label">Parola nouă</label>
       <input class="input" type="password" name="new_password" required>
     </div>
 
     <div class="form-row">
-      <label class="label">Confirm new password</label><br>
+      <label class="label">Confirmă parola nouă</label>
       <input class="input" type="password" name="new_password_confirm" required>
     </div>
 
-    <button class="btn" type="submit">Update password</button>
+    <div class="form-actions">
+      <button class="btn" type="submit">Actualizează parola</button>
+    </div>
   </form>
 </div>
 

@@ -1,7 +1,11 @@
 <?php require __DIR__ . '/_layout_start.php'; ?>
 <?php $isAdmin = (Auth::role() === 'admin'); ?>
 
-<h2 class="page-title">Setări</h2>
+<div class="page-header">
+  <div class="page-header__left">
+    <h2 class="page-header__title">Setări</h2>
+  </div>
+</div>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
   <div class="flash flash--error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
@@ -28,7 +32,7 @@
     <?php
       // Reuse the same panel used on the dedicated Admin -> Users page.
       $redirectTarget = 'settings';
-      require __DIR__ . '/users/panel.php';
+      // require __DIR__ . '/users/panel.php';
     ?>
   </div>
 <?php endif; ?>

@@ -18,7 +18,8 @@
 }
 
 /* Buttons */
-.btn, .tab-btn {
+.btn,
+.tab-btn {
   padding: 8px 14px;
   border-radius: 12px;
   border: 1px solid #533afd;
@@ -73,7 +74,10 @@ a.btn:active,
 }
 
 /* Backwards-compatible aliases (some pages still use these) */
-.btn-primary, .btn:hover, .tab-btn.active, .tab-btn:hover {
+.btn-primary,
+.btn:hover,
+.tab-btn.active,
+.tab-btn:hover {
   background: var(--primary);
   border-color: rgba(99, 91, 255, 0.45);
   color: #fff;
@@ -116,7 +120,6 @@ a.btn:active,
   background: var(--sidebar-bg);
   color: #111;
 }
-
 
 /* Phase 6: button variants + sizing (safe overrides) */
 .btn--secondary,
@@ -170,11 +173,13 @@ a.btn:active,
 .input {
   width: 340px;
   max-width: 100%;
+  min-height: 44px;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 12px;
   outline: none;
   background: var(--sidebar-bg);
+  font: inherit;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease;
@@ -183,11 +188,13 @@ a.btn:active,
 .select {
   width: 340px;
   max-width: 100%;
+  min-height: 44px;
   padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 12px;
   outline: none;
   background: var(--sidebar-bg);
+  font: inherit;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease;
@@ -208,8 +215,8 @@ a.btn:active,
 }
 
 .input:focus {
-  border-color: rgba(37, 99, 235, 0.65);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.18);
 }
 
 .select:focus,
@@ -219,6 +226,18 @@ a.btn:active,
 }
 
 /* Forms */
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.form-standard {
+  display: grid;
+  gap: 12px;
+  max-width: 900px;
+}
+
 .form-stack {
   display: grid;
   gap: 12px;
@@ -240,11 +259,73 @@ a.btn:active,
   display: grid;
   gap: 6px;
 }
+
+/* Inputs inside form rows should be full-width by default */
+.form-row :where(input, select, textarea) {
+  width: 100%;
+  min-width: 0; /* prevent overflow in grids/flex */
+}
+
+.form-row :where(input[type="file"]) {
+  width: 100%;
+}
+
+/* Normalize raw form controls inside standardized forms so all inputs match.
+   This avoids mixed default browser styles on pages where an input is missing the .input class. */
+.form-standard
+  .form-row
+  :where(
+    input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not(
+        [type="submit"]
+      ):not([type="button"]):not([type="reset"]),
+    select,
+    textarea
+  ) {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  outline: none;
+  background: var(--sidebar-bg);
+  font: inherit;
+}
+
+.form-standard
+  .form-row
+  :where(
+    input:not([type="file"]):not([type="checkbox"]):not([type="radio"]):not(
+        [type="submit"]
+      ):not([type="button"]):not([type="reset"]),
+    select,
+    textarea
+  ):focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.18);
+}
+
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.18);
+}
+
+.form-row__hint,
+.help {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.form-section {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
   align-items: center;
+  margin-top: 4px;
 }
 .form-inline {
   display: flex;
@@ -266,7 +347,109 @@ a.btn:active,
 /* File inputs */
 .content input[type="file"] {
   font: inherit;
+  display: block;
   max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Custom select (Stripe-like) */
+.cselect {
+  position: relative;
+  width: 100%;
+}
+
+/* Keep native select for submit, but hide it visually everywhere */
+.cselect__native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cselect__btn {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: var(--sidebar-bg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.cselect__btn:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.22);
+}
+
+.cselect.is-open .cselect__btn {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.18);
+}
+
+.cselect__list {
+  display: none;
+}
+
+.cselect.is-open .cselect__list {
+  display: block;
+}
+
+.cselect__btn::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%) rotate(45deg);
+  border-right: 2px solid rgba(17, 24, 39, 0.55);
+  border-bottom: 2px solid rgba(17, 24, 39, 0.55);
+  pointer-events: none;
+}
+
+.cselect__list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.12);
+  max-height: 240px;
+  overflow: auto;
+  padding: 6px;
+  z-index: 50;
+  display: none;
+}
+
+.cselect__opt {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cselect__opt:hover {
+  background: rgba(99, 91, 255, 0.08);
+}
+
+.cselect__opt.is-selected {
+  background: rgba(99, 91, 255, 0.12);
 }
 .content input[type="file"]::file-selector-button {
   margin-right: 10px;
@@ -282,6 +465,20 @@ a.btn:active,
     transform 0.08s ease,
     box-shadow 0.18s ease,
     background 0.18s ease;
+}
+
+@media (max-width: 520px) {
+  /* prevent horizontal scroll caused by long "No file chosen" text */
+  .content input[type="file"]::file-selector-button {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  /* Safari */
+  .content input[type="file"]::-webkit-file-upload-button {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
 }
 .content input[type="file"]::file-selector-button:hover {
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
@@ -341,9 +538,9 @@ a.btn:active,
     input[type="number"],
     select,
     textarea
-  ):focus {
-  border-color: rgba(37, 99, 235, 0.65);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  ):focus, #chatMessage:focus, #chatSearch:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.18);
   outline: none;
 }
 
@@ -364,13 +561,13 @@ a.btn:active,
 }
 
 /* Cards */
-/* .card {
+.card {
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 16px;
-  background: var(--sidebar-bg);
+  background: var(--surface);
   padding: 16px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-} */
+}
 .card-header {
   display: flex;
   align-items: flex-start;
@@ -408,6 +605,75 @@ a.btn:active,
   margin: 14px 0;
 }
 
+/* Tables (generic wrapper) */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 16px;
+}
+
+/* Responsive tables -> cards (use .rtable + .rtable-cards in markup) */
+.rtable-cards {
+  /* Hidden by default (desktop/tablet). Shown only on mobile via media query below. */
+  display: none !important;
+  gap: 12px;
+}
+
+.data-card {
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.data-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.data-card__title {
+  font-weight: 800;
+  margin: 0;
+}
+
+.data-card__meta {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  color: #374151;
+  font-size: 14px;
+}
+
+.data-card__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .rtable {
+    display: none !important;
+  }
+  .rtable-cards {
+    display: grid !important;
+  }
+}
+
+/* Extra safety: when the responsive CSS doesn't load in the expected order,
+   force the desktop view to show ONLY tables. */
+@media (min-width: 641px) {
+  .rtable {
+    display: block !important;
+  }
+  .rtable-cards {
+    display: none !important;
+  }
+}
+
 @media (max-width: 720px) {
   .card-header {
     flex-direction: column;
@@ -426,8 +692,31 @@ a.btn:active,
   display: flex;
   gap: 10px;
   margin: 12px 0;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
+/* Prevent small-screen tab rows from forcing horizontal scroll */
+.tabs .tab-btn {
+  max-width: 100%;
+}
+
+/* Mobile: keep tabs nicely aligned (2 per row) without altering button styles */
+@media (max-width: 520px) {
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tabs .tab-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  /* If there's an odd number of tabs, last one spans full row */
+  .tabs .tab-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
 
 /* .tab-btn.active {
   background: var(--sidebar-bg);
@@ -462,15 +751,16 @@ a.btn:active,
   padding: 10px 10px;
   border-radius: 12px;
   text-decoration: none;
+  color: #e5e7eb;
 }
 .sidebar a:hover {
   background: transparent;
-  color: var(--primary);
+  color: #2dd4bf;
 }
 .sidebar a.active {
   background: transparent;
-  color: var(--primary);
-  font-weight: 800;
+  color: #51f6e7;
+  font-weight: 600;
 }
 
 .sidebar a:focus-visible {
@@ -480,12 +770,12 @@ a.btn:active,
 
 .content {
   flex: 1;
-  border: 1px solid rgba(17, 24, 39, 0.1);
+  border: 1px solid rgb(17, 24, 39);
   border-radius: 16px;
   padding: 18px;
   background: var(--sidebar-bg);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-  min-height: 420px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.692);
+  min-height: calc(100vh - 36px);
 }
 
 /* Responsive helpers (global, safe) */
@@ -519,10 +809,14 @@ a.btn:active,
   margin: 0 0 16px;
 }
 
+.page-header__left {
+  min-width: 0;
+}
+
 .page-header__title {
   margin: 0;
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -546,6 +840,7 @@ a.btn:active,
   }
   .page-header__actions {
     justify-content: flex-start;
+    width: 100%;
   }
 }
 

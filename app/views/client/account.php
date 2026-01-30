@@ -1,8 +1,15 @@
 <?php require __DIR__ . '/_layout_start.php'; ?>
 
 <div class="client-account">
-  <h2>My Account</h2>
-  <p><a href="<?= BASE_URL ?>client/dashboard">⬅ Back</a></p>
+  <div class="page-header">
+    <div class="page-header__left">
+      <h2 class="page-header__title">Contul meu</h2>
+      <p class="page-header__subtitle">Actualizează datele de profil și parola.</p>
+    </div>
+    <div class="page-header__actions">
+      <a class="btn btn-ghost" href="<?= BASE_URL ?>client/dashboard">⬅ Înapoi</a>
+    </div>
+  </div>
 
   <?php if (!empty($_SESSION['flash_error'])): ?>
     <div class="flash flash--error"><?= htmlspecialchars($_SESSION['flash_error']) ?></div>
@@ -22,61 +29,63 @@
 
   <!-- PROFILE -->
   <div id="profile" class="tab-panel">
-    <h3 style="margin-top:0;">Edit profile</h3>
+    <h3 style="margin-top:0;">Profil</h3>
 
-    <form method="POST" action="<?= BASE_URL ?>client/profile" enctype="multipart/form-data">
-      <div class="grid">
-        <div class="row">
-          <div class="label">Company</div>
+    <div class="card">
+      <form method="POST" action="<?= BASE_URL ?>client/profile" enctype="multipart/form-data" class="form-grid">
+        <div class="form-row">
+          <label class="label">Companie</label>
           <input class="input" name="company" value="<?= htmlspecialchars($client['company'] ?? '') ?>">
         </div>
 
-        <div class="row">
-          <div class="label">Phone</div>
+        <div class="form-row">
+          <label class="label">Telefon</label>
           <input class="input" name="phone" value="<?= htmlspecialchars($client['phone'] ?? '') ?>">
         </div>
 
-        <div class="row" style="grid-column: 1 / -1;">
-          <div class="label">Address</div>
+        <div class="form-row" style="grid-column: 1 / -1;">
+          <label class="label">Adresă</label>
           <input class="input" name="address" value="<?= htmlspecialchars($client['address'] ?? '') ?>">
         </div>
 
-        <div class="row" style="grid-column: 1 / -1;">
-          <div class="label">Avatar (jpg/png/webp, max 3MB)</div>
+        <div class="form-row" style="grid-column: 1 / -1;">
+          <label class="label">Poză profil <span class="help">(jpg/png/webp, max 3MB)</span></label>
           <input class="input" style="padding:8px 12px;" type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp">
         </div>
-      </div>
 
-      <div style="margin-top:14px;">
-        <button class="btn" type="submit">Save changes</button>
-      </div>
-    </form>
+        <div class="form-actions" style="grid-column: 1 / -1;">
+          <button class="btn" type="submit">Salvează</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- CHANGE PASSWORD -->
   <div id="password" class="tab-panel">
-    <h3 style="margin-top:0;">Change password</h3>
+    <h3 style="margin-top:0;">Schimbă parola</h3>
 
-    <form method="POST" action="<?= BASE_URL ?>client/change-password">
-      <div class="row">
-        <div class="label">Old password</div>
-        <input class="input" type="password" name="current_password" required>
-      </div>
+    <div class="card">
+      <form method="POST" action="<?= BASE_URL ?>client/change-password" class="form-standard">
+        <div class="form-row">
+          <label class="label">Parola veche</label>
+          <input class="input" type="password" name="current_password" required>
+        </div>
 
-      <div class="row">
-        <div class="label">New password</div>
-        <input class="input" type="password" name="new_password" required>
-      </div>
+        <div class="form-row">
+          <label class="label">Parola nouă</label>
+          <input class="input" type="password" name="new_password" required>
+        </div>
 
-      <div class="row">
-        <div class="label">Confirm new password</div>
-        <input class="input" type="password" name="new_password_confirm" required>
-      </div>
+        <div class="form-row">
+          <label class="label">Confirmă parola nouă</label>
+          <input class="input" type="password" name="new_password_confirm" required>
+        </div>
 
-      <div style="margin-top:14px;">
-        <button class="btn" type="submit">Update password</button>
-      </div>
-    </form>
+        <div class="form-actions">
+          <button class="btn" type="submit">Actualizează parola</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- SECURITY: DELETE ACCOUNT -->
@@ -90,12 +99,14 @@
 
       <form method="POST" action="<?= BASE_URL ?>client/delete-account"
             onsubmit="return confirm('Sigur vrei să îți ștergi contul? Acțiune ireversibilă.');">
-        <div class="row">
-          <div class="label">Confirmă parola</div>
+        <div class="form-row">
+          <label class="label">Confirmă parola</label>
           <input class="input" type="password" name="current_password" required>
         </div>
 
-        <button class="btn" type="submit">🗑 Șterge contul meu</button>
+        <div class="form-actions">
+          <button class="btn" type="submit">🗑 Șterge contul meu</button>
+        </div>
       </form>
     </div>
   </div>

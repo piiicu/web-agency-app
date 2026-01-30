@@ -23,10 +23,13 @@ function tasks_url(array $params = []): string {
 <?php require __DIR__ . '/admin/_layout_start.php'; ?>
 
 <div class="page-header">
-  <h2>Task-uri interne</h2>
+  <div class="page-header__left">
+    <h2 class="page-header__title">Task-uri interne</h2>
+    <p class="page-header__subtitle">Organizează activitățile echipei și urmărește progresul.</p>
+  </div>
 </div>
     <!-- Formular adăugare task -->
-    <form method="POST" action="<?= BASE_URL ?>tasks" style="margin-bottom:15px;">
+    <form method="POST" action="<?= BASE_URL ?>tasks" class="form-inline" style="margin-bottom:15px;">
         <input class="input" type="text" name="title" placeholder="Task nou" required>
 
         <select class="input" name="priority" style="width:auto;">

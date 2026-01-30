@@ -1,6 +1,10 @@
 <?php require __DIR__ . '/../_layout_start.php'; ?>
 
-<h2 class="page-title">Admin → Users</h2>
+<div class="page-header">
+  <div class="page-header__left">
+    <h2 class="page-header__title">Utilizatori</h2>
+  </div>
+</div>
 
 <?php if (!empty($_SESSION['flash_error'])): ?>
   <div class="flash flash--error"><?php echo htmlspecialchars($_SESSION['flash_error']); ?></div>

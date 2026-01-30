@@ -19,10 +19,15 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
 }
 ?>
 
-<div class="tickets-header">
-  <h2 class="tickets-title">Inbox tichete</h2>
-<!-- Search -->
-  <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets') ?>" class="tickets-search">
+<div class="page-header">
+  <div class="page-header__left">
+    <h2 class="page-header__title">Inbox tichete</h2>
+    <p class="page-header__subtitle">Caută și gestionează tichetele clienților.</p>
+  </div>
+
+  <div class="page-header__actions">
+    <!-- Search -->
+    <form method="GET" action="<?= htmlspecialchars(BASE_URL . 'admin/tickets') ?>" class="tickets-search">
     <?php if ($isRouteMode): ?>
       <input type="hidden" name="route" value="admin/tickets">
     <?php endif; ?>
@@ -35,7 +40,10 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
       value="<?= htmlspecialchars($q) ?>"
     />
     <button class="btn" type="submit">Caută</button>
-  </form>
+    </form>
+
+    <button id="openExportModal" class="btn" type="button">Export</button>
+  </div>
 </div>
 
 <div class="tickets-tabs">
@@ -49,9 +57,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
 </div>
 
 <!-- Toolbar deasupra tabelului (dreapta) -->
-<div class="tickets-toolbar">
-  <button id="openExportModal" class="btn" type="button">Export</button>
-</div>
+<div class="tickets-toolbar" aria-hidden="true"></div>
 
 <!-- Modal export (lightbox) -->
 <div id="exportModal" class="modal-overlay" aria-hidden="true">
@@ -77,9 +83,9 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
       <input name="client" type="text" placeholder="Client">
       <select name="status">
         <option value="">Status (toate)</option>
-        <option value="open">deschis</option>
-        <option value="resolved">rezolvat</option>
-        <option value="deleted">șters</option>
+        <option value="open"><?= htmlspecialchars(ticketStatusLabel('open')) ?></option>
+        <option value="resolved"><?= htmlspecialchars(ticketStatusLabel('resolved')) ?></option>
+        <option value="deleted"><?= htmlspecialchars(ticketStatusLabel('deleted')) ?></option>
       </select>
 
       <div class="modal-actions">
@@ -100,7 +106,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
   </button>
 
   <div class="tickets-table-wrap" aria-label="Tickets table">
-    <table id="ticketsTable" class="tickets-table">
+    <table id="ticketsTable" class="table tickets-table">
     <thead>
       <tr>
         <th class="col-drag">⇅</th>
@@ -159,7 +165,7 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
           </td>
           <td>
             <?php $st = (string)($t['status'] ?? ''); ?>
-            <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars($st) ?></span>
+            <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ticketStatusLabel($st)) ?></span>
           </td>
           <td><?= htmlspecialchars($t['last_public_message'] ?? '') ?></td>
           <td><?= htmlspecialchars($t['updated_at'] ?? '') ?></td>
@@ -184,12 +190,12 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
             </div>
             <div class="ticket-card__client"><b>Client:</b> <?= htmlspecialchars($t['client_name']) ?></div>
           </div>
-          <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars($st) ?></span>
+          <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ticketStatusLabel($st)) ?></span>
         </div>
 
         <div class="ticket-card__subject"><?= htmlspecialchars($t['subject']) ?></div>
         <div class="ticket-card__last"><b>Ultimul mesaj:</b> <?= htmlspecialchars($t['last_public_message'] ?? '') ?></div>
-        <div class="ticket-card__client"><b>Updated:</b> <?= htmlspecialchars($t['updated_at'] ?? '') ?></div>
+        <div class="ticket-card__client"><b>Actualizat:</b> <?= htmlspecialchars($t['updated_at'] ?? '') ?></div>
 
         <div class="ticket-card__actions">
           <a class="btn" href="<?= htmlspecialchars(BASE_URL . 'admin/ticket' . $idSep . (int)$t['id']) ?>">Deschide</a>
@@ -206,14 +212,14 @@ function ticketsTabUrl(string $tab, string $q, string $paramSep): string
               Șterge
             </button>
           <?php else: ?>
-            <button
+                <button
               class="btn"
               type="submit"
               name="ticket_id"
               value="<?= (int)$t['id'] ?>"
               formaction="<?= htmlspecialchars(BASE_URL . 'admin/ticket-restore') ?>"
               formmethod="post">
-              Restore
+                  Revenire
             </button>
           <?php endif; ?>
         </div>

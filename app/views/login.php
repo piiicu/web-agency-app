@@ -19,12 +19,12 @@
 
     <form method="POST" action="<?= BASE_URL ?>login" class="auth-form">
       <div class="form-row">
-        <label class="label">Email</label><br>
+        <label class="label">Email</label>
         <input class="input" type="email" name="email" placeholder="email@example.com" required>
       </div>
 
       <div class="form-row">
-        <label class="label">Parolă</label><br>
+        <label class="label">Parolă</label>
         <input class="input" type="password" name="password" placeholder="••••••••" required>
       </div>
 

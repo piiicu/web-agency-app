@@ -25,7 +25,7 @@ $redirectTarget = $redirectTarget ?? '';
 
 <div class="card" style="margin-bottom:12px;">
   <h3 class="section-title" style="margin-top:0;">Crează utilizatori</h3>
-  <form method="POST" action="<?= BASE_URL ?>admin/users-create">
+  <form method="POST" action="<?= BASE_URL ?>admin/users-create" class="form-standard">
     <?php if ($redirectTarget): ?>
       <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectTarget) ?>">
     <?php endif; ?>
@@ -42,20 +42,22 @@ $redirectTarget = $redirectTarget ?? '';
 
     <div class="form-row">
       <label class="label">Rolul utilizatorului</label>
-      <select class="input" name="role" required>
+      <select class="input" name="role" required data-cselect>
         <option value="client">Client</option>
         <option value="admin">Admin</option>
       </select>
     </div>
 
-    <button class="btn" type="submit">Crează + Generează invitație</button>
+    <div class="form-actions">
+      <button class="btn" type="submit">Crează + Generează invitație</button>
+    </div>
   </form>
 </div>
 
 <div class="card">
   <h3 class="section-title" style="margin-top:0;">Users</h3>
 
-  <div style="overflow:auto;">
+  <div class="table-wrap rtable">
     <table class="table" style="min-width:680px;">
       <thead>
         <tr>
@@ -90,6 +92,36 @@ $redirectTarget = $redirectTarget ?? '';
         <?php endforeach; ?>
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="rtable-cards" aria-label="Users list">
+    <?php foreach ($users as $u): ?>
+      <div class="data-card">
+        <div class="data-card__top">
+          <div>
+            <p class="data-card__title" style="margin:0;">#<?= (int)$u['id'] ?> — <?= htmlspecialchars($u['name']) ?></p>
+            <div class="data-card__meta">
+              <div><b>Email:</b> <?= htmlspecialchars($u['email']) ?></div>
+              <div><b>Rol:</b> <?= htmlspecialchars($u['role']) ?></div>
+            </div>
+          </div>
+        </div>
+        <div class="data-card__actions">
+          <?php if ((int)$u['id'] !== (int)Auth::id()): ?>
+            <form method="POST" action="<?= BASE_URL ?>admin/users-invite" style="display:inline;">
+              <?php if ($redirectTarget): ?>
+                <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectTarget) ?>">
+              <?php endif; ?>
+              <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+              <button class="btn" type="submit">Generează invitație</button>
+            </form>
+          <?php else: ?>
+            —
+          <?php endif; ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
   </div>
 </div>
 

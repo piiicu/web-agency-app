@@ -1,4 +1,18 @@
 <?php if (!defined('ASSET_URL')) { die('ASSET_URL not defined'); } ?>
+<?php
+// View helpers (safe globals)
+if (!function_exists('ticketStatusLabel')) {
+  function ticketStatusLabel(string $status): string
+  {
+    return match ($status) {
+      'open' => 'Deschis',
+      'resolved' => 'Rezolvat',
+      'deleted' => 'Șters',
+      default => $status,
+    };
+  }
+}
+?>
 <!doctype html>
 <html lang="ro">
 <head>

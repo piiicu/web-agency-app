@@ -2,7 +2,7 @@
 
 <div class="client-tickets">
   <div class="page-header">
-    <div>
+    <div class="page-header__left">
       <h1 class="page-header__title">Ticket-ele mele</h1>
       <p class="page-header__subtitle">Creează un ticket nou sau vezi istoricul conversațiilor.</p>
     </div>
@@ -31,7 +31,7 @@
 
   <h3 class="h3">Ticket-ele tale</h3>
 
-  <div class="table-wrap">
+  <div class="table-wrap rtable">
   <table class="table">
         <thead>
             <tr>
@@ -61,13 +61,7 @@
 
                     <td>
                       <?php $st = (string)($t['status'] ?? ''); ?>
-                      <?php if ($st === 'open'): ?>
-                        <span class="badge badge--open">Deschis</span>
-                      <?php elseif ($st === 'resolved'): ?>
-                        <span class="badge badge--resolved">Rezolvat</span>
-                      <?php else: ?>
-                        <span class="badge"><?= htmlspecialchars($st !== '' ? $st : '—') ?></span>
-                      <?php endif; ?>
+                      <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ticketStatusLabel($st)) ?></span>
                     </td>
 
                     <td>
@@ -78,6 +72,33 @@
 
         </tbody>
     </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="rtable-cards" aria-label="Tickets list">
+    <?php if (empty($tickets)): ?>
+      <div class="data-card">
+        <p style="margin:0;">Nu ai încă niciun ticket.</p>
+      </div>
+    <?php endif; ?>
+
+    <?php foreach ($tickets as $t): ?>
+      <?php $st = (string)($t['status'] ?? ''); ?>
+      <div class="data-card">
+        <div class="data-card__top">
+          <div>
+            <p class="data-card__title" style="margin:0;">#<?= (int)$t['id'] ?> — <?= htmlspecialchars($t['subject']) ?></p>
+            <div class="data-card__meta">
+              <div><b>Status:</b> <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ticketStatusLabel($st)) ?></span></div>
+              <div><b>Data:</b> <?= date('d.m.Y H:i', strtotime($t['created_at'])) ?></div>
+            </div>
+          </div>
+        </div>
+        <div class="data-card__actions">
+          <a class="btn" href="<?= BASE_URL ?>client/ticket&id=<?= (int)$t['id'] ?>">Deschide</a>
+        </div>
+      </div>
+    <?php endforeach; ?>
   </div>
 </div>
 

@@ -2,7 +2,7 @@
 
 <div class="ticket-page">
   <div class="page-header">
-    <div>
+    <div class="page-header__left">
       <h1 class="page-header__title">Tichet #<?= (int)$ticket['id'] ?> — <?= htmlspecialchars($ticket['subject']) ?></h1>
       <p class="page-header__subtitle">Client: <b><?= htmlspecialchars($ticket['client_name']) ?></b></p>
     </div>
@@ -16,7 +16,7 @@
   <select id="ticket_status" name="status" class="select" style="width:auto; min-width: 160px;">
     <?php foreach (['open','resolved'] as $s): ?>
       <option value="<?= $s ?>" <?= $ticket['status'] === $s ? 'selected' : '' ?>>
-        <?= $s ?>
+        <?= htmlspecialchars(ticketStatusLabel($s)) ?>
       </option>
     <?php endforeach; ?>
   </select>

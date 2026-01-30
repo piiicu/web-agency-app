@@ -274,6 +274,139 @@
   }
 })();
 
+
+// Custom select (mobile-friendly) for specific <select> elements.
+// Usage: add `data-cselect` attribute to a <select>.
+(function () {
+  function closeAll(except) {
+    document.querySelectorAll('.cselect.is-open').forEach(function (el) {
+      if (except && el === except) return;
+      el.classList.remove('is-open');
+      var list = el.querySelector('.cselect__list');
+      if (list) list.setAttribute('aria-hidden', 'true');
+    });
+  }
+
+  function build(select) {
+    if (!select || select.dataset.cselectBuilt === '1') return;
+    select.dataset.cselectBuilt = '1';
+
+    // Wrap
+    var wrap = document.createElement('div');
+    wrap.className = 'cselect';
+
+    // Keep native select for form submit, but hide visually
+    select.classList.add('cselect__native');
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+
+    // Button
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cselect__btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    wrap.appendChild(btn);
+
+    // List
+    var list = document.createElement('div');
+    list.className = 'cselect__list';
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(list);
+
+    function syncLabel() {
+      var opt = select.options[select.selectedIndex];
+      btn.textContent = opt ? (opt.textContent || opt.value || '') : '';
+    }
+
+    function rebuildOptions() {
+      list.innerHTML = '';
+      Array.from(select.options).forEach(function (opt, idx) {
+        if (opt.disabled) return;
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'cselect__opt';
+        item.setAttribute('role', 'option');
+        item.dataset.value = opt.value;
+        item.textContent = opt.textContent;
+        if (idx === select.selectedIndex) item.classList.add('is-selected');
+
+        item.addEventListener('click', function () {
+          select.value = item.dataset.value;
+          // update selectedIndex properly
+          for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === select.value) {
+              select.selectedIndex = i;
+              break;
+            }
+          }
+          // fire change
+          try { select.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) {}
+          syncLabel();
+          rebuildOptions();
+          closeAll();
+          btn.focus();
+        });
+
+        list.appendChild(item);
+      });
+    }
+
+    function open() {
+      closeAll(wrap);
+      wrap.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      list.setAttribute('aria-hidden', 'false');
+    }
+
+    function close() {
+      wrap.classList.remove('is-open');
+      btn.setAttribute('aria-expanded', 'false');
+      list.setAttribute('aria-hidden', 'true');
+    }
+
+    btn.addEventListener('click', function () {
+      var isOpen = wrap.classList.contains('is-open');
+      if (isOpen) {
+        close();
+      } else {
+        open();
+      }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAll();
+    });
+
+    // Sync when native changes (e.g., form reset)
+    select.addEventListener('change', function () {
+      syncLabel();
+      rebuildOptions();
+    });
+
+    // Initial
+    syncLabel();
+    rebuildOptions();
+  }
+
+  function init() {
+    document.querySelectorAll('select[data-cselect]').forEach(build);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
 // Mobile sidebar drawer (safe, no dependencies)
 (function () {
   function initDrawer() {

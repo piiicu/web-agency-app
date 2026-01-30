@@ -14,18 +14,20 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 18px;
+  background: #22a796;
 }
 
 .app-content {
   /* keeps existing page layouts working */
+
 }
 
 /* Left sidebar (desktop) */
 .app-sidebar {
-  width: 300px;
-  flex: 0 0 300px;
-  border-right: 1px solid rgba(17, 24, 39, 0.10);
-  background: #fff;
+  width: 250px;
+  flex: 0 0 250px;
+  /* border-right: 2px solid rgb(209 209 209); */
+  background: #058274;
   position: sticky;
   top: 0;
   height: 100vh;

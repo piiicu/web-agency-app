@@ -1,6 +1,6 @@
 <?php require __DIR__ . '/../_layout_start.php'; ?>
 
-<h2 class="page-title">Client details</h2>
+<h2 class="page-title">Detalii client</h2>
 
 <?php
   $name    = $client['name'] ?? '';
@@ -27,11 +27,11 @@
       <div class="muted"><?= htmlspecialchars($email) ?></div>
 
       <?php if ($company): ?>
-        <div class="mt-14"><strong>Company:</strong> <?= htmlspecialchars($company) ?></div>
+        <div class="mt-14"><strong>Companie:</strong> <?= htmlspecialchars($company) ?></div>
       <?php endif; ?>
 
       <?php if ($phone): ?>
-        <div class="mt-14"><strong>Phone:</strong> <?= htmlspecialchars($phone) ?></div>
+        <div class="mt-14"><strong>Telefon:</strong> <?= htmlspecialchars($phone) ?></div>
       <?php endif; ?>
     </div>
   </div>
@@ -49,6 +49,7 @@
 <?php if (empty($tickets)): ?>
   <p>Acest client nu are tichete.</p>
 <?php else: ?>
+  <div class="table-wrap rtable">
   <table class="table">
     <thead>
       <tr>
@@ -64,7 +65,7 @@
         <tr>
           <td>#<?= (int)$t['id'] ?></td>
           <td><?= htmlspecialchars($t['subject']) ?></td>
-          <td><?= htmlspecialchars($t['status']) ?></td>
+          <td><?= htmlspecialchars(ticketStatusLabel((string)($t['status'] ?? ''))) ?></td>
           <td><?= htmlspecialchars($t['updated_at']) ?></td>
           <td>
             <a class="btn"
@@ -76,6 +77,29 @@
       <?php endforeach; ?>
     </tbody>
   </table>
+
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="rtable-cards" aria-label="Tichete client">
+    <?php foreach ($tickets as $t): ?>
+      <?php $st = (string)($t['status'] ?? ''); ?>
+      <div class="data-card">
+        <div class="data-card__top">
+          <div>
+            <p class="data-card__title" style="margin:0;">#<?= (int)$t['id'] ?> — <?= htmlspecialchars($t['subject']) ?></p>
+            <div class="data-card__meta">
+              <div><b>Status:</b> <span class="badge badge--<?= htmlspecialchars($st) ?>"><?= htmlspecialchars(ticketStatusLabel($st)) ?></span></div>
+              <div><b>Actualizat:</b> <?= htmlspecialchars($t['updated_at']) ?></div>
+            </div>
+          </div>
+        </div>
+        <div class="data-card__actions">
+          <a class="btn" href="<?= BASE_URL ?>admin/ticket&id=<?= (int)$t['id'] ?>">Deschide</a>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  </div>
 <?php endif; ?>
 
 <?php require __DIR__ . '/../_layout_end.php'; ?>

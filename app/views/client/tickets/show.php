@@ -3,7 +3,7 @@
 <div class="client-ticket">
 
   <div class="page-header">
-    <div>
+    <div class="page-header__left">
       <h1 class="page-header__title">Ticket #<?= (int)$ticket['id'] ?></h1>
       <p class="page-header__subtitle"><?= htmlspecialchars($ticket['subject']) ?></p>
     </div>
@@ -75,8 +75,9 @@
 
     <div class="client-ticket__head">
       <div class="form-inline">
-        <span class="badge <?= ($ticket['status'] === 'open') ? 'open' : 'closed' ?>">
-          <?= ($ticket['status'] === 'open') ? '🟢 Deschis' : '🔴 Închis' ?>
+        <?php $st = (string)($ticket['status'] ?? ''); ?>
+        <span class="badge <?= ($st === 'open') ? 'open' : 'closed' ?>">
+          <?= ($st === 'open') ? '🟢 ' . htmlspecialchars(ticketStatusLabel('open')) : '🔴 ' . htmlspecialchars(ticketStatusLabel('resolved')) ?>
         </span>
 
         <span class="muted">
