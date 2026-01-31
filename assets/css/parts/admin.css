@@ -12,11 +12,15 @@
 .tickets-search input[type="search"] {
   width: 340px;
   max-width: 100%;
-  padding: 10px 12px;
+  padding: 6px 12px;
   border: 1px solid #d1d5db;
   border-radius: 12px;
   outline: none;
   background: #fff;
+}
+.tickets-search input[type="search"]:focus {
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.18);
+  border-color: var(--primary);
 }
 
 .tickets-tabs {
@@ -316,7 +320,7 @@
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  border: 1px solid rgba(17, 24, 39, 0.10);
+  border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -485,4 +489,3 @@
   gap: 12px;
   margin: 18px 0 10px;
 }
-

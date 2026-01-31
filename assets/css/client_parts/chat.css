@@ -299,3 +299,24 @@
 }
 
 
+
+
+/* WhatsApp-like checks (sent/delivered/read) */
+.chat-checks {
+  font-size: 12px;
+  font-weight: 900;
+  margin-left: 6px;
+  line-height: 1;
+  opacity: .85;
+  user-select: none;
+}
+
+.chat-checks.sent,
+.chat-checks.delivered {
+  color: #9ca3af; /* gray */
+}
+
+.chat-checks.read {
+  color: #34b7f1; /* WhatsApp blue */
+  opacity: 1;
+}

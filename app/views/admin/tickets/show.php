@@ -10,17 +10,22 @@
     <div class="page-header__actions">
       <a class="btn btn-ghost" href="<?= BASE_URL ?>admin/tickets">⬅ Înapoi la inbox</a>
 
-      <form method="POST" action="<?= BASE_URL ?>admin/ticket-status" class="ticket-status-form">
-  <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
-  <label class="label" for="ticket_status">Status</label>
-  <select id="ticket_status" name="status" class="select" style="width:auto; min-width: 160px;">
-    <?php foreach (['open','resolved'] as $s): ?>
-      <option value="<?= $s ?>" <?= $ticket['status'] === $s ? 'selected' : '' ?>>
-        <?= htmlspecialchars(ticketStatusLabel($s)) ?>
-      </option>
-    <?php endforeach; ?>
-  </select>
-  <button class="btn" type="submit">Actualizează</button>
+      <form method="POST" action="<?= BASE_URL ?>admin/ticket-status" class="ticket-status-form form-inline">
+        <input type="hidden" name="ticket_id" value="<?= (int)$ticket['id'] ?>">
+
+        <label class="label" for="ticket_status">Status</label>
+
+        <div style="width: 180px; max-width: 100%;">
+          <select id="ticket_status" name="status" class="input" data-cselect>
+            <?php foreach (['open','resolved'] as $s): ?>
+              <option value="<?= $s ?>" <?= $ticket['status'] === $s ? 'selected' : '' ?>>
+                <?= htmlspecialchars(ticketStatusLabel($s)) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <button class="btn" type="submit">Actualizează</button>
       </form>
     </div>
   </div>

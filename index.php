@@ -33,7 +33,7 @@ $route = $_GET['route'] ?? 'login';
 $protected = [
     'dashboard',
     'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite',
-    'chat', 'chat-poll',
+    'chat', 'chat-poll', 'chat-mark-read',
     'chat-attachment',
     'admin/dashboard',
     'client/dashboard',
@@ -146,6 +146,12 @@ if ($route === 'chat-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     (new ChatController())->poll();
     exit;
 }
+
+if ($route === 'chat-mark-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new ChatController())->markRead();
+    exit;
+}
+
 
 if ($route === 'chat-attachment' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin','employee','staff']);

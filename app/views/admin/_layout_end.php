@@ -5,7 +5,7 @@
   <!-- Right sidebar (desktop). On mobile this becomes a drawer. -->
   <aside class="app-sidebar" data-sidebar>
     <div class="app-sidebar__mobile-header">
-      <div class="app-sidebar__mobile-title">Menu</div>
+      <div class="app-sidebar__mobile-title">Meniu</div>
       <button class="app-sidebar__close" type="button" data-sidebar-close aria-label="Close menu">✕</button>
     </div>
     <?php require __DIR__ . '/_sidebar.php'; ?>

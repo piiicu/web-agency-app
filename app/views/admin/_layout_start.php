@@ -13,7 +13,7 @@ function navActive($needle, $current) {
     <div class="app-topbar__inner">
       <div class="app-topbar__brand">
         <span class="app-topbar__dot"></span>
-        <span class="app-topbar__title">Agentie</span>
+        <span class="app-topbar__title">Web app</span>
       </div>
       <button class="app-topbar__menu" type="button" data-sidebar-open aria-label="Open menu">☰</button>
     </div>

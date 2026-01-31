@@ -2,31 +2,59 @@
 
 class ChatController
 {
-    /* =========================
-       VIEW CHAT
-       ========================= */
     public function index()
     {
         global $pdo;
 
-        Auth::requireRole(['admin','employee','staff']);
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
+        if ($currentUserId <= 0) {
+            // fallback simplu
+            header("Location: " . BASE_URL . "login");
+            exit;
+        }
 
         // mark last seen (badges)
         $stmt = $pdo->query("SELECT MAX(id) AS m FROM messages");
         $_SESSION['chat_last_seen_id'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
 
+        // Read receipts: when opening chat, mark other users' messages as delivered + read
+        if ($this->receiptsEnabled()) {
+            $pdo->prepare("
+            UPDATE messages
+            SET delivered_at = COALESCE(delivered_at, NOW())
+            WHERE user_id <> ? AND delivered_at IS NULL
+        ")->execute([$currentUserId]);
+
+            $pdo->prepare("
+            UPDATE messages
+            SET read_at = COALESCE(read_at, NOW())
+            WHERE user_id <> ? AND read_at IS NULL
+        ")->execute([$currentUserId]);
+        }
+
         // load messages
-        $messages = $pdo->query("
+        if ($this->receiptsEnabled()) {
+            $messages = $pdo->query("
+            SELECT m.id, m.user_id, m.message, m.created_at, m.delivered_at, m.read_at, u.name
+            FROM messages m
+            JOIN users u ON u.id = m.user_id
+            ORDER BY m.id ASC
+            LIMIT 200
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $messages = $pdo->query("
             SELECT m.id, m.user_id, m.message, m.created_at, u.name
             FROM messages m
             JOIN users u ON u.id = m.user_id
             ORDER BY m.id ASC
             LIMIT 200
         ")->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $messages = $this->attachAttachments($messages);
 
-        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
         foreach ($messages as &$m) {
             $m['is_me'] = ((int)$m['user_id'] === $currentUserId);
         }
@@ -35,6 +63,7 @@ class ChatController
         require __DIR__ . '/../views/chat.php';
     }
 
+
     /* =========================
        SEND MESSAGE + FILES
        ========================= */
@@ -42,7 +71,7 @@ class ChatController
     {
         global $pdo;
 
-        Auth::requireRole(['admin','employee','staff']);
+        Auth::requireRole(['admin', 'employee', 'staff']);
 
         $userId = (int)($_SESSION['user']['id'] ?? 0);
         if ($userId <= 0) {
@@ -76,29 +105,79 @@ class ChatController
     {
         global $pdo;
 
-        Auth::requireRole(['admin','employee','staff']);
+        Auth::requireRole(['admin', 'employee', 'staff']);
 
         $since = (int)($_GET['since'] ?? 0);
 
-        $stmt = $pdo->prepare("
-            SELECT m.id, m.user_id, m.message, m.created_at, u.name
-            FROM messages m
-            JOIN users u ON u.id = m.user_id
-            WHERE m.id > ?
-            ORDER BY m.id ASC
-        ");
+        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
+
+        if ($this->receiptsEnabled()) {
+            // When user is on chat, newly received messages are delivered + read
+            $pdo->prepare("UPDATE messages SET delivered_at = COALESCE(delivered_at, NOW())
+                   WHERE id > ? AND user_id <> ? AND delivered_at IS NULL")
+                ->execute([$since, $currentUserId]);
+
+            // $pdo->prepare("UPDATE messages SET read_at = COALESCE(read_at, NOW())
+            //        WHERE id > ? AND user_id <> ? AND read_at IS NULL")
+            //     ->execute([$since, $currentUserId]);
+
+            $stmt = $pdo->prepare("
+        SELECT m.id, m.user_id, m.message, m.created_at, m.delivered_at, m.read_at, u.name
+        FROM messages m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.id > ?
+        ORDER BY m.id ASC
+    ");
+        } else {
+            $stmt = $pdo->prepare("
+        SELECT m.id, m.user_id, m.message, m.created_at, u.name
+        FROM messages m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.id > ?
+        ORDER BY m.id ASC
+    ");
+        }
         $stmt->execute([$since]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $rows = $this->attachAttachments($rows);
-
-        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
         foreach ($rows as &$m) {
             $m['is_me'] = ((int)$m['user_id'] === $currentUserId);
         }
         unset($m);
 
-        $this->json(['messages' => $rows]);
+        if ($this->receiptsEnabled()) {
+            // status updates for my messages (so ✓✓ updates without new messages)
+            $from = max(0, $since - 300);
+            $st = $pdo->prepare("SELECT id, delivered_at, read_at FROM messages WHERE id > ? AND user_id = ? ORDER BY id ASC");
+            $st->execute([$from, $currentUserId]);
+            $statuses = $st->fetchAll(PDO::FETCH_ASSOC);
+
+            $this->json(['messages' => $rows, 'statuses' => $statuses]);
+        } else {
+            $this->json(['messages' => $rows]);
+        }
+    }
+
+
+
+    /* =========================
+   READ RECEIPTS SUPPORT
+   ========================= */
+    private function receiptsEnabled(): bool
+    {
+        static $enabled = null;
+        if ($enabled !== null) return $enabled;
+
+        global $pdo;
+        try {
+            // Will fail if columns don't exist yet
+            $pdo->query("SELECT delivered_at, read_at FROM messages LIMIT 1");
+            $enabled = true;
+        } catch (\Throwable $e) {
+            $enabled = false;
+        }
+        return $enabled;
     }
 
     /* =========================
@@ -209,5 +288,27 @@ class ChatController
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($data);
         exit;
+    }
+
+    public function markRead()
+    {
+        global $pdo;
+
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
+
+        if (!$this->receiptsEnabled()) {
+            $this->json(['ok' => true]);
+        }
+
+        // marchează drept citite toate mesajele altora (în chat intern)
+        $pdo->prepare("
+        UPDATE messages
+        SET read_at = COALESCE(read_at, NOW())
+        WHERE user_id <> ? AND read_at IS NULL
+    ")->execute([$currentUserId]);
+
+        $this->json(['ok' => true]);
     }
 }

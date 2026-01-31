@@ -373,8 +373,9 @@ input:-webkit-autofill:focus {
 .cselect__btn {
   display: block;
   width: 100%;
-  min-height: 44px;
-  padding: 10px 12px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0px 12px;
   border: 1px solid #d1d5db;
   border-radius: 12px;
   background: var(--sidebar-bg);
