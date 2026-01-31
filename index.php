@@ -157,6 +157,22 @@ if ($route === 'chat-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+// WhatsApp-like conversation actions (v2)
+if ($route === 'chat-hide' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new ChatController())->hideConversation();
+    exit;
+}
+
+if ($route === 'chat-leave' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new ChatController())->leaveConversation();
+    exit;
+}
+
+if ($route === 'chat-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new ChatController())->deleteConversation();
+    exit;
+}
+
 if ($route === 'chat-mark-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     (new ChatController())->markRead();
     exit;

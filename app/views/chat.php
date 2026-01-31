@@ -31,7 +31,7 @@ function isImgMime(?string $mime): bool
     <?php if (!empty($conversations) && is_array($conversations)): ?>
       <div class="chat-convpick">
         <label class="chat-convpick__label" for="chatConv">Conversație</label>
-        <select id="chatConv" class="input" data-chat-conv data-cselect>
+        <select id="chatConv" class="select" data-chat-conv data-cselect>
           <?php foreach ($conversations as $c): ?>
             <?php $id = (int)($c['id'] ?? 0); ?>
             <option value="<?= $id ?>" <?= $id === $cid ? 'selected' : '' ?>>
@@ -40,6 +40,38 @@ function isImgMime(?string $mime): bool
           <?php endforeach; ?>
         </select>
       </div>
+
+      <?php
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $aType = (string)($activeConversation['type'] ?? 'general');
+        $aCreatedBy = (int)($activeConversation['created_by'] ?? 0);
+      ?>
+      <?php if ($cid > 0 && $aType !== 'general'): ?>
+        <div class="chat-actions" data-chat-actions>
+          <button type="button" class="btn btn-ghost chat-actions__btn" data-chat-actions-btn aria-haspopup="menu" aria-expanded="false">⋯</button>
+          <div class="chat-actions__menu" data-chat-actions-menu hidden>
+            <form method="POST" action="<?= BASE_URL ?>chat-hide" class="chat-actions__form">
+              <input type="hidden" name="cid" value="<?= $cid ?>">
+              <button type="submit" class="chat-actions__item">Ascunde conversația</button>
+            </form>
+
+            <?php if ($aType === 'group'): ?>
+              <form method="POST" action="<?= BASE_URL ?>chat-leave" class="chat-actions__form" onsubmit="return confirm('Părăsești grupul?');">
+                <input type="hidden" name="cid" value="<?= $cid ?>">
+                <button type="submit" class="chat-actions__item">Părăsește grupul</button>
+              </form>
+            <?php endif; ?>
+
+            <?php if ($aCreatedBy === $meId): ?>
+              <div class="chat-actions__sep"></div>
+              <form method="POST" action="<?= BASE_URL ?>chat-delete" class="chat-actions__form" onsubmit="return confirm('Ștergi conversația pentru toți participanții?');">
+                <input type="hidden" name="cid" value="<?= $cid ?>">
+                <button type="submit" class="chat-actions__item chat-actions__item--danger">Șterge pentru toți</button>
+              </form>
+            <?php endif; ?>
+          </div>
+        </div>
+      <?php endif; ?>
     <?php endif; ?>
 
     <!-- Create DM / Group -->
@@ -566,6 +598,38 @@ function appendMessage(m) {
       status.textContent = "Eroare la trimitere.";
     }
   });
+
+  // Conversation actions menu (⋯)
+  (function initChatActionsMenu() {
+    const root = document.querySelector('[data-chat-actions]');
+    if (!root) return;
+    const btn = root.querySelector('[data-chat-actions-btn]');
+    const menu = root.querySelector('[data-chat-actions-menu]');
+    if (!btn || !menu) return;
+
+    function closeMenu() {
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    function openMenu() {
+      menu.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (menu.hidden) openMenu();
+      else closeMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target)) closeMenu();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+  })();
 
   async function markRead() {
   // doar dacă user chiar vede pagina

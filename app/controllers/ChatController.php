@@ -32,9 +32,12 @@ class ChatController
         // Ensure I can access that conversation
         if (!$this->isParticipant($cid, $meId)) {
             $cid = $generalId;
+        } else {
+            // If I previously hid this chat, opening it should unhide it (WhatsApp-like)
+            $this->unhideIfNeeded($cid, $meId);
         }
 
-        // Conversations sidebar
+        // Conversations sidebar (exclude hidden / left / deleted)
         $conversations = $this->getMyConversations($meId);
         $activeConversation = $this->getConversation($cid);
 
@@ -58,6 +61,123 @@ class ChatController
         $pageTitle = 'Chat intern';
 
         require __DIR__ . '/../views/chat.php';
+    }
+
+    /* =========================
+       WHATSAPP-LIKE ACTIONS
+       - hide: only for me (remove from list)
+       - leave: only for me (exit group/dm)
+       - delete: for everyone (creator only; group/dm), general cannot be deleted
+       ========================= */
+    public function hide(): void
+    {
+        global $pdo;
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['cid'] ?? 0);
+        if (!$this->chatV2Enabled()) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+        if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        // Can't hide General (keep always visible)
+        $type = (string)$pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1")->execute([$cid]);
+        // (avoid extra query errors - use safe select)
+        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
+        $st->execute([$cid]);
+        $t = (string)($st->fetchColumn() ?: '');
+        if ($t === 'general') {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $pdo->prepare("UPDATE conversation_participants SET hidden_at = NOW() WHERE conversation_id = ? AND user_id = ?")
+            ->execute([$cid, $meId]);
+
+        header('Location: ' . BASE_URL . 'chat');
+        exit;
+    }
+
+    public function leave(): void
+    {
+        global $pdo;
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['cid'] ?? 0);
+        if (!$this->chatV2Enabled()) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+        if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
+        $st->execute([$cid]);
+        $t = (string)($st->fetchColumn() ?: '');
+        if ($t === 'general') {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $pdo->prepare("UPDATE conversation_participants SET left_at = NOW(), hidden_at = NOW() WHERE conversation_id = ? AND user_id = ?")
+            ->execute([$cid, $meId]);
+
+        header('Location: ' . BASE_URL . 'chat');
+        exit;
+    }
+
+    public function delete(): void
+    {
+        global $pdo;
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['cid'] ?? 0);
+        if (!$this->chatV2Enabled()) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+        if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $st = $pdo->prepare("SELECT type, created_by, deleted_at FROM conversations WHERE id = ? LIMIT 1");
+        $st->execute([$cid]);
+        $c = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $type = (string)($c['type'] ?? '');
+        $createdBy = (int)($c['created_by'] ?? 0);
+        $deletedAt = $c['deleted_at'] ?? null;
+
+        if ($type === 'general' || $deletedAt) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        // Only the creator can delete for everyone.
+        if ($createdBy !== $meId) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $pdo->prepare("UPDATE conversations SET deleted_at = NOW(), deleted_by = ? WHERE id = ?")
+            ->execute([$meId, $cid]);
+
+        // Hide for all participants (keeps rows for auditing)
+        $pdo->prepare("UPDATE conversation_participants SET hidden_at = COALESCE(hidden_at, NOW()), left_at = COALESCE(left_at, NOW()) WHERE conversation_id = ?")
+            ->execute([$cid]);
+
+        header('Location: ' . BASE_URL . 'chat');
+        exit;
     }
 
     /* =========================
@@ -249,7 +369,7 @@ class ChatController
         Auth::requireRole(['admin', 'employee', 'staff']);
 
         $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_GET['cid'] ?? 0);
+        $cid = (int)($_GET['cid'] ?? ($_POST['cid'] ?? 0));
 
         if (!$this->chatV2Enabled()) {
             // legacy: keep the old behavior if needed
@@ -261,10 +381,109 @@ class ChatController
             $this->json(['ok' => true]);
         }
 
-        $pdo->prepare("UPDATE conversation_participants SET last_read_at = NOW() WHERE conversation_id = ? AND user_id = ?")
+        $pdo->prepare("UPDATE conversation_participants SET last_read_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
             ->execute([$cid, $meId]);
 
         $this->json(['ok' => true]);
+    }
+
+    /* =========================
+       CONVERSATION ACTIONS (WhatsApp-like)
+       ========================= */
+    public function hideConversation(): void
+    {
+        global $pdo;
+
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['cid'] ?? 0);
+
+        if (!$this->chatV2Enabled() || $cid <= 0) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        // Don't allow hiding the General chat (keeps a safe default)
+        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
+        $st->execute([$cid]);
+        $type = (string)($st->fetchColumn() ?: '');
+        if ($type === 'general') {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        // Only hide if I'm still a participant
+        if ($this->isParticipant($cid, $meId)) {
+            $pdo->prepare("UPDATE conversation_participants SET hidden_at = NOW() WHERE conversation_id = ? AND user_id = ?")
+                ->execute([$cid, $meId]);
+        }
+
+        header('Location: ' . BASE_URL . 'chat');
+        exit;
+    }
+
+    public function leaveConversation(): void
+    {
+        global $pdo;
+
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['cid'] ?? 0);
+
+        if (!$this->chatV2Enabled() || $cid <= 0) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
+        $st->execute([$cid]);
+        $type = (string)($st->fetchColumn() ?: '');
+        if ($type === 'general') {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        // Leave: lose access (but chat history stays for others)
+        $pdo->prepare("UPDATE conversation_participants SET left_at = NOW(), hidden_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
+            ->execute([$cid, $meId]);
+
+        header('Location: ' . BASE_URL . 'chat');
+        exit;
+    }
+
+    public function deleteConversation(): void
+    {
+        global $pdo;
+
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['cid'] ?? 0);
+
+        if (!$this->chatV2Enabled() || $cid <= 0) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        $st = $pdo->prepare("SELECT type, created_by FROM conversations WHERE id = ? LIMIT 1");
+        $st->execute([$cid]);
+        $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
+        $type = (string)($row['type'] ?? '');
+        $createdBy = (int)($row['created_by'] ?? 0);
+
+        if ($type === 'general' || $createdBy !== $meId) {
+            header('Location: ' . BASE_URL . 'chat');
+            exit;
+        }
+
+        // Delete for everyone: mark conversation deleted
+        $pdo->prepare("UPDATE conversations SET deleted_at = NOW(), deleted_by = ? WHERE id = ? AND deleted_at IS NULL")
+            ->execute([$meId, $cid]);
+
+        header('Location: ' . BASE_URL . 'chat');
+        exit;
     }
 
     /* =========================
@@ -325,9 +544,26 @@ class ChatController
     private function isParticipant(int $cid, int $uid): bool
     {
         global $pdo;
-        $st = $pdo->prepare("SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ? LIMIT 1");
+        // Must be a participant that didn't leave, and conversation not deleted
+        $st = $pdo->prepare(
+            "SELECT 1\n"
+            . "FROM conversation_participants p\n"
+            . "JOIN conversations c ON c.id = p.conversation_id\n"
+            . "WHERE p.conversation_id = ? AND p.user_id = ?\n"
+            . "  AND (p.left_at IS NULL)\n"
+            . "  AND (c.deleted_at IS NULL)\n"
+            . "LIMIT 1"
+        );
         $st->execute([$cid, $uid]);
         return (bool)$st->fetchColumn();
+    }
+
+    private function unhideIfNeeded(int $cid, int $uid): void
+    {
+        global $pdo;
+        // If user hid the chat before, unhide when opening it.
+        $pdo->prepare("UPDATE conversation_participants SET hidden_at = NULL WHERE conversation_id = ? AND user_id = ? AND hidden_at IS NOT NULL")
+            ->execute([$cid, $uid]);
     }
 
     private function getConversation(int $cid): array
@@ -365,6 +601,9 @@ class ChatController
             . "FROM conversations c "
             . "JOIN conversation_participants p ON p.conversation_id = c.id "
             . "WHERE p.user_id = ? "
+            . "  AND p.left_at IS NULL "
+            . "  AND p.hidden_at IS NULL "
+            . "  AND c.deleted_at IS NULL "
             . "ORDER BY (last_at IS NULL) ASC, last_at DESC, c.id DESC"
         );
         $st->execute([$meId]);
@@ -409,7 +648,7 @@ class ChatController
     private function touchDelivered(int $cid, int $meId): void
     {
         global $pdo;
-        $pdo->prepare("UPDATE conversation_participants SET last_delivered_at = NOW() WHERE conversation_id = ? AND user_id = ?")
+        $pdo->prepare("UPDATE conversation_participants SET last_delivered_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
             ->execute([$cid, $meId]);
     }
 
@@ -444,7 +683,7 @@ class ChatController
             . "MAX(CASE WHEN user_id <> ? AND last_delivered_at IS NOT NULL AND last_delivered_at >= ? THEN 1 ELSE 0 END) AS any_delivered, "
             . "MAX(CASE WHEN user_id <> ? AND last_read_at IS NOT NULL AND last_read_at >= ? THEN 1 ELSE 0 END) AS any_read "
             . "FROM conversation_participants "
-            . "WHERE conversation_id = ?"
+            . "WHERE conversation_id = ? AND left_at IS NULL"
         );
         $st2->execute([$senderId, $createdAt, $senderId, $createdAt, $cid]);
         $r = $st2->fetch(PDO::FETCH_ASSOC) ?: [];
