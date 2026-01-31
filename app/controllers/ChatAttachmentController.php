@@ -15,12 +15,16 @@ class ChatAttachmentController
             return;
         }
 
-        $stmt = $pdo->prepare("
-            SELECT id, original_name, stored_name, mime_type
-            FROM chat_attachments
-            WHERE id = ?
-            LIMIT 1
-        ");
+        // Prefer chat v2 attachments if table exists
+        $table = 'chat_attachments';
+        try {
+            $pdo->query("SELECT 1 FROM conversation_attachments LIMIT 1");
+            $table = 'conversation_attachments';
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        $stmt = $pdo->prepare("SELECT id, original_name, stored_name, mime_type FROM {$table} WHERE id = ? LIMIT 1");
         $stmt->execute([$id]);
         $a = $stmt->fetch(PDO::FETCH_ASSOC);
 

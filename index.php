@@ -33,7 +33,7 @@ $route = $_GET['route'] ?? 'login';
 $protected = [
     'dashboard',
     'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite',
-    'chat', 'chat-poll', 'chat-mark-read',
+    'chat', 'chat-poll', 'chat-mark-read', 'chat-dm', 'chat-group',
     'chat-attachment',
     'admin/dashboard',
     'client/dashboard',
@@ -139,6 +139,16 @@ if ($route === 'chat' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 if ($route === 'chat' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     (new ChatController())->store();
+    exit;
+}
+
+if ($route === 'chat-dm' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new ChatController())->dm();
+    exit;
+}
+
+if ($route === 'chat-group' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new ChatController())->group();
     exit;
 }
 

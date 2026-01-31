@@ -357,6 +357,7 @@ input:-webkit-autofill:focus {
 /* Custom select (Stripe-like) */
 .cselect {
   position: relative;
+  min-width: 200px;
   width: 100%;
 }
 
@@ -480,13 +481,22 @@ input:-webkit-autofill:focus {
     padding: 8px 10px;
     border-radius: 10px;
   }
+
+  .cselect {
+  min-width: 140px;
+  width: 100%;
 }
+}
+
+
 .content input[type="file"]::file-selector-button:hover {
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
 }
+
 .content input[type="file"]::file-selector-button:active {
   transform: translateY(1px);
 }
+
 /* Safari */
 .content input[type="file"]::-webkit-file-upload-button {
   margin-right: 10px;

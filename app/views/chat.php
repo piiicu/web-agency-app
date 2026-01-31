@@ -15,6 +15,10 @@ function isImgMime(?string $mime): bool
 }
 ?>
 
+<?php
+  $cid = (int)($activeConversation['id'] ?? 0);
+?>
+
 <div class="page-header">
   <div class="page-header__left">
     <h1 class="page-header__title">Chat intern</h1>
@@ -23,6 +27,59 @@ function isImgMime(?string $mime): bool
 
   <div class="page-header__actions">
     <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-ghost">⬅ Dashboard</a>
+
+    <?php if (!empty($conversations) && is_array($conversations)): ?>
+      <div class="chat-convpick">
+        <label class="chat-convpick__label" for="chatConv">Conversație</label>
+        <select id="chatConv" class="input" data-chat-conv data-cselect>
+          <?php foreach ($conversations as $c): ?>
+            <?php $id = (int)($c['id'] ?? 0); ?>
+            <option value="<?= $id ?>" <?= $id === $cid ? 'selected' : '' ?>>
+              <?= htmlspecialchars((string)($c['title'] ?? 'Conversație')) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    <?php endif; ?>
+
+    <!-- Create DM / Group -->
+    <?php if (!empty($users) && is_array($users)): ?>
+<button type="button" class="btn btn-ghost" data-chat-new-open>+ Nou</button>
+
+<div class="chat-new" data-chat-new hidden>
+  <div class="chat-new__backdrop" data-chat-new-close></div>
+  <div class="chat-new__dialog" role="dialog" aria-modal="true" aria-label="Conversație nouă">
+    <div class="chat-new__head">
+      <div class="chat-new__title">Conversație nouă</div>
+      <button type="button" class="chat-new__close" data-chat-new-close aria-label="Închide">✕</button>
+    </div>
+
+    <div class="chat-new__body">
+      <div class="chat-new__section">
+        <div class="chat-new__label">Creează conversație (grup sau privat)</div>
+        <form method="POST" action="<?= BASE_URL ?>chat-group" class="chat-new__group">
+          <input class="input" name="title" placeholder="Nume grup (opțional)">
+
+          <div class="chat-new__users" role="group" aria-label="Participanți">
+            <?php $meUid = (int)($_SESSION['user']['id'] ?? 0); ?>
+            <?php foreach ($users as $u): ?>
+              <?php if ((int)$u['id'] === $meUid) continue; ?>
+              <label class="chat-new__user">
+                <input type="checkbox" name="user_ids[]" value="<?= (int)$u['id'] ?>">
+                <span><?= htmlspecialchars($u['name'] . ' (' . $u['role'] . ')') ?></span>
+              </label>
+            <?php endforeach; ?>
+          </div>
+
+          <button class="btn" type="submit">Creează</button>
+          <div class="chat-new__hint" data-chat-new-hint style="display:none;"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php endif; ?>
 
     <!-- Mobile: WhatsApp-like actions (⋮ → Search) -->
     <div class="chat-topmenu" data-chat-topmenu>
@@ -71,15 +128,7 @@ function isImgMime(?string $mime): bool
               <?php endif; ?>
               <span class="chat-time"><?= $time ?></span>
               <?php if ($isMe): ?>
-                <?php
-                  $del = $m['delivered_at'] ?? null;
-                  $rea = $m['read_at'] ?? null;
-                  $cls = 'sent';
-                  $txt = '✓';
-                  if (!empty($del)) { $cls = 'delivered'; $txt = '✓✓'; }
-                  if (!empty($rea)) { $cls = 'read'; $txt = '✓✓'; }
-                ?>
-                <span class="chat-checks <?= $cls ?>" aria-label="<?= $cls ?>"><?= $txt ?></span>
+                <span class="chat-checks sent" aria-label="sent">✓</span>
               <?php endif; ?>
             </div>
 
@@ -168,11 +217,92 @@ function isImgMime(?string $mime): bool
   }
 
   const BASE_URL = "<?= BASE_URL ?>";
+  const CID = <?= (int)$cid ?>;
   let sinceId = <?= (int)$lastId ?>;
 
-  const CHAT_POLL_ROUTE = BASE_URL + "chat-poll";
-  const CHAT_MARK_READ_ROUTE = "<?= BASE_URL ?>chat-mark-read";
-  const CHAT_SEND_ROUTE = BASE_URL + "chat";
+  const CHAT_POLL_ROUTE = BASE_URL + "chat-poll&cid=" + encodeURIComponent(String(CID));
+  const CHAT_MARK_READ_ROUTE = BASE_URL + "chat-mark-read&cid=" + encodeURIComponent(String(CID));
+  const CHAT_SEND_ROUTE = BASE_URL + "chat&cid=" + encodeURIComponent(String(CID));
+
+
+  // New conversation modal (DM / Group) - overlay, no layout shift
+  (function () {
+    const openBtn = document.querySelector('[data-chat-new-open]');
+    const modal = document.querySelector('[data-chat-new]');
+    if (!openBtn || !modal) return;
+
+    // Safety: always start closed (prevents modal showing due to cached DOM state)
+    modal.classList.remove('is-open');
+    modal.hidden = true;
+
+    const closeBtns = modal.querySelectorAll('[data-chat-new-close]');
+    const groupForm = modal.querySelector('form.chat-new__group');
+    const hint = modal.querySelector('[data-chat-new-hint]');
+
+    function open() {
+      modal.classList.add('is-open');
+      modal.hidden = false;
+      document.body.classList.add('has-modal');
+      // focus first input if present
+      const first = modal.querySelector('select, input, button');
+      if (first) first.focus({ preventScroll: true });
+    }
+
+    function close() {
+      modal.classList.remove('is-open');
+      modal.hidden = true;
+      document.body.classList.remove('has-modal');
+      openBtn.focus({ preventScroll: true });
+    }
+
+    openBtn.addEventListener('click', open);
+
+    // Robust close: works even if the close button/backdrop is re-rendered
+    closeBtns.forEach(b => b.addEventListener('click', close));
+    modal.addEventListener('click', (e) => {
+      if (e.target && e.target.closest && e.target.closest('[data-chat-new-close]')) {
+        close();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.hidden) close();
+    });
+
+    // No need to stop propagation: only elements marked with [data-chat-new-close]
+    // will close the modal.
+
+    // Validate group creation: require at least 1 other user checked
+    if (groupForm) {
+      groupForm.addEventListener('submit', (e) => {
+        const checked = groupForm.querySelectorAll('input[type="checkbox"][name="user_ids[]"]:checked').length;
+        if (checked < 1) {
+          e.preventDefault();
+          if (hint) {
+            hint.style.display = 'block';
+            hint.textContent = 'Selectează cel puțin o persoană.';
+          }
+          return;
+        }
+        if (hint) {
+          hint.style.display = 'none';
+          hint.textContent = '';
+        }
+      });
+    }
+  })();
+
+
+
+  // Conversation switcher
+  const convSelect = document.querySelector('[data-chat-conv]');
+  if (convSelect) {
+    convSelect.addEventListener('change', () => {
+      const next = convSelect.value;
+      if (!next) return;
+      window.location.href = BASE_URL + 'chat&cid=' + encodeURIComponent(String(next));
+    });
+  }
 
   const box = document.getElementById("chatBox");
   const form = document.getElementById("chatForm");
@@ -312,23 +442,20 @@ function isImgMime(?string $mime): bool
   
   function checksHtml(m) {
     if (!m || !m.is_me) return "";
-    const delivered = !!m.delivered_at;
-    const read = !!m.read_at;
-    if (read) return `<span class="chat-checks read" aria-label="read">✓✓</span>`;
-    if (delivered) return `<span class="chat-checks delivered" aria-label="delivered">✓✓</span>`;
+    // default until statuses come from server
     return `<span class="chat-checks sent" aria-label="sent">✓</span>`;
   }
 
-  function applyStatus(id, delivered_at, read_at) {
+  function applyStatus(id, delivered, read) {
     const row = box ? box.querySelector(`[data-message-id="${CSS.escape(String(id))}"]`) : null;
     if (!row) return;
     const el = row.querySelector(".chat-checks");
     if (!el) return;
 
-    if (read_at) {
+    if (read) {
       el.className = "chat-checks read";
       el.textContent = "✓✓";
-    } else if (delivered_at) {
+    } else if (delivered) {
       el.className = "chat-checks delivered";
       el.textContent = "✓✓";
     } else {
@@ -382,7 +509,7 @@ function appendMessage(m) {
       const data = await res.json();
       if (!data) return;
       if (data.statuses && Array.isArray(data.statuses)) {
-        data.statuses.forEach(s => applyStatus(s.id, s.delivered_at, s.read_at));
+        data.statuses.forEach(s => applyStatus(s.id, !!s.delivered, !!s.read));
       }
       if (!Array.isArray(data.messages) || data.messages.length === 0) return;
 
