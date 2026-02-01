@@ -56,7 +56,7 @@ function isImgMime(?string $mime): bool
             </form>
 
             <?php if ($aType === 'group'): ?>
-              <form method="POST" action="<?= BASE_URL ?>chat-leave" class="chat-actions__form" onsubmit="return confirm('Părăsești grupul?');">
+              <form method="POST" action="<?= BASE_URL ?>chat-leave" class="chat-actions__form" data-confirm="Părăsești grupul?">
                 <input type="hidden" name="cid" value="<?= $cid ?>">
                 <button type="submit" class="chat-actions__item">Părăsește grupul</button>
               </form>
@@ -64,7 +64,7 @@ function isImgMime(?string $mime): bool
 
             <?php if ($aCreatedBy === $meId): ?>
               <div class="chat-actions__sep"></div>
-              <form method="POST" action="<?= BASE_URL ?>chat-delete" class="chat-actions__form" onsubmit="return confirm('Ștergi conversația pentru toți participanții?');">
+              <form method="POST" action="<?= BASE_URL ?>chat-delete" class="chat-actions__form" data-confirm="Ștergi conversația pentru toți participanții?">
                 <input type="hidden" name="cid" value="<?= $cid ?>">
                 <button type="submit" class="chat-actions__item chat-actions__item--danger">Șterge pentru toți</button>
               </form>
@@ -659,4 +659,50 @@ markRead();
   setInterval(poll, 2000);
 </script>
 
+
+<script>
+(function(){
+  function ensureConfirm(){
+    let el = document.getElementById("uiConfirm");
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = "uiConfirm";
+    el.style.position = "fixed";
+    el.style.inset = "0";
+    el.style.zIndex = "9999";
+    el.style.display = "none";
+    el.innerHTML = `
+      <div id="uiConfirmBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.42)"></div>
+      <div style="position:relative;max-width:420px;margin:12vh auto;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25);padding:16px">
+        <div style="font-weight:700;margin-bottom:8px">Confirmare</div>
+        <div id="uiConfirmMsg" style="margin:8px 0 14px;line-height:1.4"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button type="button" id="uiConfirmNo" class="btn">Renunță</button>
+          <button type="button" id="uiConfirmYes" class="btn">OK</button>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    function hide(){ el.style.display = "none"; el.__cb = null; }
+    el.querySelector("#uiConfirmBackdrop").addEventListener("click", hide);
+    el.querySelector("#uiConfirmNo").addEventListener("click", hide);
+    el.hide = hide;
+    el.show = function(msg, cb){
+      el.querySelector("#uiConfirmMsg").textContent = msg;
+      el.__cb = cb;
+      el.style.display = "block";
+      el.querySelector("#uiConfirmYes").onclick = function(){ const f = el.__cb; hide(); if (f) f(); };
+    };
+    return el;
+  }
+
+  document.addEventListener("submit", function(e){
+    const form = e.target;
+    if (!form || !form.getAttribute) return;
+    const msg = form.getAttribute("data-confirm");
+    if (!msg) return;
+    e.preventDefault();
+    ensureConfirm().show(msg, function(){ form.submit(); });
+  }, true);
+})();
+</script>
 <?php require __DIR__ . '/admin/_layout_end.php'; ?>

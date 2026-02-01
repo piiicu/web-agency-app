@@ -388,14 +388,13 @@
   border-radius: 12px;
 }
 
-
 /* WhatsApp-like checks (sent/delivered/read) */
 .chat-checks {
   font-size: 12px;
   font-weight: 900;
   margin-left: 6px;
   line-height: 1;
-  opacity: .85;
+  opacity: 0.85;
   user-select: none;
 }
 
@@ -408,7 +407,6 @@
   color: #34b7f1; /* WhatsApp blue */
   opacity: 1;
 }
-
 
 /* =========================
    Conversations picker + creation
@@ -425,7 +423,10 @@
 }
 
 @media (max-width: 640px) {
-  .chat-convpick .select { width: 100%; min-width: 0; }
+  .chat-convpick .select {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .chat-convpick__label {
@@ -435,7 +436,9 @@
 }
 
 @media (max-width: 640px) {
-  .chat-convpick__label { display: none; }
+  .chat-convpick__label {
+    display: none;
+  }
 }
 
 /* Conversation actions (⋯) menu */
@@ -491,7 +494,9 @@
 }
 
 /* New conversation modal (DM / Group) */
-body.has-modal { overflow: hidden; }
+body.has-modal {
+  overflow: hidden;
+}
 
 .chat-new {
   position: fixed;
@@ -610,7 +615,7 @@ body.has-modal { overflow: hidden; }
   padding: 8px 10px;
   border-radius: 12px;
   background: #fff;
-  border: 1px solid rgba(17, 24, 39, 0.10);
+  border: 1px solid rgba(17, 24, 39, 0.1);
   cursor: pointer;
 }
 
@@ -638,4 +643,5 @@ body.has-modal { overflow: hidden; }
     z-index: 1;
   }
 }
+
 

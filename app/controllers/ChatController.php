@@ -17,13 +17,13 @@ class ChatController
             exit;
         }
 
-        // Ensure schema exists (tables created via SQL). If not, fallback to old global chat.
+        // If v2 tables don't exist, fallback to legacy chat
         if (!$this->chatV2Enabled()) {
             $this->legacyIndex();
             return;
         }
 
-        // Ensure a "General" conversation exists and I'm a participant.
+        // Ensure "General" exists + I'm participant
         $generalId = $this->ensureGeneralConversation($meId);
 
         $cid = (int)($_GET['cid'] ?? 0);
@@ -33,22 +33,28 @@ class ChatController
         if (!$this->isParticipant($cid, $meId)) {
             $cid = $generalId;
         } else {
-            // If I previously hid this chat, opening it should unhide it (WhatsApp-like)
+            // Opening un-hides (WhatsApp-like)
             $this->unhideIfNeeded($cid, $meId);
         }
 
-        // Conversations sidebar (exclude hidden / left / deleted)
         $conversations = $this->getMyConversations($meId);
         $activeConversation = $this->getConversation($cid);
 
-        // Users list for creating DM / group (internal users only)
-        $users = $pdo->query("SELECT id, name, role FROM users WHERE role IN ('admin','employee','staff') AND is_active = 1 ORDER BY role DESC, name ASC")
-            ->fetchAll(PDO::FETCH_ASSOC);
+        // internal users list (exclude me)
+        $stUsers = $pdo->prepare("
+            SELECT id, name, role
+            FROM users
+            WHERE role IN ('admin','employee','staff')
+              AND is_active = 1
+              AND id <> ?
+            ORDER BY role DESC, name ASC
+        ");
+        $stUsers->execute([$meId]);
+        $users = $stUsers->fetchAll(PDO::FETCH_ASSOC);
 
-        // Mark delivered when I load/poll this conversation (like WhatsApp: delivered when received)
+        // Delivered when I'm connected (page open)
         $this->touchDelivered($cid, $meId);
 
-        // Messages
         $messages = $this->getMessages($cid, 0);
         $messages = $this->attachAttachments($messages);
 
@@ -57,127 +63,8 @@ class ChatController
         }
         unset($m);
 
-        // For top header title
         $pageTitle = 'Chat intern';
-
         require __DIR__ . '/../views/chat.php';
-    }
-
-    /* =========================
-       WHATSAPP-LIKE ACTIONS
-       - hide: only for me (remove from list)
-       - leave: only for me (exit group/dm)
-       - delete: for everyone (creator only; group/dm), general cannot be deleted
-       ========================= */
-    public function hide(): void
-    {
-        global $pdo;
-        Auth::requireRole(['admin', 'employee', 'staff']);
-
-        $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_POST['cid'] ?? 0);
-        if (!$this->chatV2Enabled()) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-        if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        // Can't hide General (keep always visible)
-        $type = (string)$pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1")->execute([$cid]);
-        // (avoid extra query errors - use safe select)
-        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
-        $st->execute([$cid]);
-        $t = (string)($st->fetchColumn() ?: '');
-        if ($t === 'general') {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        $pdo->prepare("UPDATE conversation_participants SET hidden_at = NOW() WHERE conversation_id = ? AND user_id = ?")
-            ->execute([$cid, $meId]);
-
-        header('Location: ' . BASE_URL . 'chat');
-        exit;
-    }
-
-    public function leave(): void
-    {
-        global $pdo;
-        Auth::requireRole(['admin', 'employee', 'staff']);
-
-        $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_POST['cid'] ?? 0);
-        if (!$this->chatV2Enabled()) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-        if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
-        $st->execute([$cid]);
-        $t = (string)($st->fetchColumn() ?: '');
-        if ($t === 'general') {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        $pdo->prepare("UPDATE conversation_participants SET left_at = NOW(), hidden_at = NOW() WHERE conversation_id = ? AND user_id = ?")
-            ->execute([$cid, $meId]);
-
-        header('Location: ' . BASE_URL . 'chat');
-        exit;
-    }
-
-    public function delete(): void
-    {
-        global $pdo;
-        Auth::requireRole(['admin', 'employee', 'staff']);
-
-        $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_POST['cid'] ?? 0);
-        if (!$this->chatV2Enabled()) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-        if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        $st = $pdo->prepare("SELECT type, created_by, deleted_at FROM conversations WHERE id = ? LIMIT 1");
-        $st->execute([$cid]);
-        $c = $st->fetch(PDO::FETCH_ASSOC) ?: [];
-
-        $type = (string)($c['type'] ?? '');
-        $createdBy = (int)($c['created_by'] ?? 0);
-        $deletedAt = $c['deleted_at'] ?? null;
-
-        if ($type === 'general' || $deletedAt) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        // Only the creator can delete for everyone.
-        if ($createdBy !== $meId) {
-            header('Location: ' . BASE_URL . 'chat');
-            exit;
-        }
-
-        $pdo->prepare("UPDATE conversations SET deleted_at = NOW(), deleted_by = ? WHERE id = ?")
-            ->execute([$meId, $cid]);
-
-        // Hide for all participants (keeps rows for auditing)
-        $pdo->prepare("UPDATE conversation_participants SET hidden_at = COALESCE(hidden_at, NOW()), left_at = COALESCE(left_at, NOW()) WHERE conversation_id = ?")
-            ->execute([$cid]);
-
-        header('Location: ' . BASE_URL . 'chat');
-        exit;
     }
 
     /* =========================
@@ -188,6 +75,7 @@ class ChatController
         global $pdo;
 
         Auth::requireRole(['admin', 'employee', 'staff']);
+
         $meId = (int)($_SESSION['user']['id'] ?? 0);
         $otherId = (int)($_POST['user_id'] ?? 0);
 
@@ -201,7 +89,7 @@ class ChatController
             exit;
         }
 
-        // Only internal users
+        // only internal active users
         $stmt = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role IN ('admin','employee','staff') AND is_active = 1");
         $stmt->execute([$otherId]);
         if (!$stmt->fetchColumn()) {
@@ -221,14 +109,19 @@ class ChatController
     }
 
     /* =========================
-       CREATE GROUP
+       CREATE GROUP (me + at least 1 other)
        ========================= */
     public function group(): void
     {
         global $pdo;
 
         Auth::requireRole(['admin', 'employee', 'staff']);
+
         $meId = (int)($_SESSION['user']['id'] ?? 0);
+        if ($meId <= 0) {
+            header("Location: " . BASE_URL . "chat");
+            exit;
+        }
 
         if (!$this->chatV2Enabled()) {
             header("Location: " . BASE_URL . "chat");
@@ -240,22 +133,20 @@ class ChatController
         if (!is_array($ids)) $ids = [];
 
         $participantIds = array_values(array_unique(array_filter(array_map('intval', $ids))));
-        if (!in_array($meId, $participantIds, true)) {
-            $participantIds[] = $meId;
-        }
 
-        // Minimum 2 participants total (me + at least one other)
+        // force include me
+        if (!in_array($meId, $participantIds, true)) $participantIds[] = $meId;
         $participantIds = array_values(array_unique($participantIds));
+
+        // must be me + at least 1 other
         if (count($participantIds) < 2) {
             header("Location: " . BASE_URL . "chat");
             exit;
         }
 
-        if ($title === '') {
-            $title = 'Grup nou';
-        }
+        if ($title === '') $title = 'Grup nou';
 
-        // Validate all are internal active users
+        // validate all are internal active users
         $in = implode(',', array_fill(0, count($participantIds), '?'));
         $st = $pdo->prepare("SELECT COUNT(*) FROM users WHERE id IN ($in) AND role IN ('admin','employee','staff') AND is_active = 1");
         $st->execute($participantIds);
@@ -267,7 +158,7 @@ class ChatController
 
         $cid = $this->createConversation('group', $title, $meId);
         foreach ($participantIds as $uid) {
-            $this->addParticipant($cid, $uid);
+            $this->addParticipant($cid, (int)$uid);
         }
 
         header("Location: " . BASE_URL . "chat&cid=" . (int)$cid);
@@ -282,12 +173,12 @@ class ChatController
         global $pdo;
 
         Auth::requireRole(['admin', 'employee', 'staff']);
+
         $meId = (int)($_SESSION['user']['id'] ?? 0);
         if ($meId <= 0) {
             $this->json(['ok' => false, 'error' => 'Unauthorized'], 401);
         }
 
-        // v2
         if ($this->chatV2Enabled()) {
             $cid = (int)($_GET['cid'] ?? ($_POST['cid'] ?? 0));
             if ($cid <= 0 || !$this->isParticipant($cid, $meId)) {
@@ -296,6 +187,7 @@ class ChatController
 
             $msg = trim((string)($_POST['message'] ?? ''));
             $hasFiles = isset($_FILES['files']) && !empty($_FILES['files']['name']);
+
             if ($msg === '' && !$hasFiles) {
                 $this->json(['ok' => true]);
             }
@@ -311,7 +203,7 @@ class ChatController
             $this->json(['ok' => true, 'id' => $messageId]);
         }
 
-        // legacy
+        // fallback legacy
         $this->legacyStore();
     }
 
@@ -333,21 +225,30 @@ class ChatController
                 $this->json(['messages' => []]);
             }
 
-            // Delivered when user is connected to this conversation (polling)
+            // delivered while polling (means "online in conversation")
             $this->touchDelivered($cid, $meId);
 
             $rows = $this->getMessages($cid, $since);
             $rows = $this->attachAttachments($rows);
+
             foreach ($rows as &$m) {
                 $m['is_me'] = ((int)$m['user_id'] === $meId);
             }
             unset($m);
 
-            // Status updates for my messages (so ✓✓ updates without new messages)
+            // status updates for my messages (so ✓✓ updates without new messages)
             $from = max(0, $since - 300);
-            $st = $pdo->prepare("SELECT id FROM conversation_messages WHERE conversation_id = ? AND id > ? AND sender_id = ? ORDER BY id ASC");
+            $st = $pdo->prepare("
+                SELECT id
+                FROM conversation_messages
+                WHERE conversation_id = ?
+                  AND id > ?
+                  AND sender_id = ?
+                ORDER BY id ASC
+            ");
             $st->execute([$cid, $from, $meId]);
             $ids = $st->fetchAll(PDO::FETCH_COLUMN);
+
             $statuses = [];
             foreach ($ids as $mid) {
                 $statuses[] = $this->messageStatus((int)$mid, $cid, $meId);
@@ -360,7 +261,7 @@ class ChatController
     }
 
     /* =========================
-       MARK READ (VISIBLE)
+       MARK READ (ONLY when chat is visible)
        ========================= */
     public function markRead(): void
     {
@@ -369,10 +270,9 @@ class ChatController
         Auth::requireRole(['admin', 'employee', 'staff']);
 
         $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_GET['cid'] ?? ($_POST['cid'] ?? 0));
+        $cid  = (int)($_GET['cid'] ?? ($_POST['cid'] ?? 0));
 
         if (!$this->chatV2Enabled()) {
-            // legacy: keep the old behavior if needed
             $this->legacyMarkRead();
             return;
         }
@@ -381,15 +281,22 @@ class ChatController
             $this->json(['ok' => true]);
         }
 
-        $pdo->prepare("UPDATE conversation_participants SET last_read_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
-            ->execute([$cid, $meId]);
+        $pdo->prepare("
+            UPDATE conversation_participants
+            SET last_read_at = NOW()
+            WHERE conversation_id = ?
+              AND user_id = ?
+              AND left_at IS NULL
+        ")->execute([$cid, $meId]);
 
         $this->json(['ok' => true]);
     }
 
     /* =========================
-       CONVERSATION ACTIONS (WhatsApp-like)
+       WhatsApp-like actions
        ========================= */
+
+    // Hide only for me (works for dm/group; no general)
     public function hideConversation(): void
     {
         global $pdo;
@@ -397,23 +304,22 @@ class ChatController
         Auth::requireRole(['admin', 'employee', 'staff']);
 
         $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_POST['cid'] ?? 0);
+        $cid  = (int)($_POST['cid'] ?? 0);
 
         if (!$this->chatV2Enabled() || $cid <= 0) {
             header('Location: ' . BASE_URL . 'chat');
             exit;
         }
 
-        // Don't allow hiding the General chat (keeps a safe default)
         $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
         $st->execute([$cid]);
         $type = (string)($st->fetchColumn() ?: '');
+
         if ($type === 'general') {
             header('Location: ' . BASE_URL . 'chat');
             exit;
         }
 
-        // Only hide if I'm still a participant
         if ($this->isParticipant($cid, $meId)) {
             $pdo->prepare("UPDATE conversation_participants SET hidden_at = NOW() WHERE conversation_id = ? AND user_id = ?")
                 ->execute([$cid, $meId]);
@@ -423,64 +329,140 @@ class ChatController
         exit;
     }
 
+    // Leave group/dm for me; if owner leaves -> transfer owner; if none left -> delete for all
     public function leaveConversation(): void
     {
         global $pdo;
 
         Auth::requireRole(['admin', 'employee', 'staff']);
 
-        $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_POST['cid'] ?? 0);
+        $me  = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['conversation_id'] ?? 0);
 
-        if (!$this->chatV2Enabled() || $cid <= 0) {
+        if ($me <= 0 || $cid <= 0 || !$this->chatV2Enabled()) {
             header('Location: ' . BASE_URL . 'chat');
             exit;
         }
 
-        $st = $pdo->prepare("SELECT type FROM conversations WHERE id = ? LIMIT 1");
-        $st->execute([$cid]);
-        $type = (string)($st->fetchColumn() ?: '');
-        if ($type === 'general') {
+        $stC = $pdo->prepare("SELECT id, type, created_by, owner_id FROM conversations WHERE id = ? LIMIT 1");
+        $stC->execute([$cid]);
+        $conv = $stC->fetch(PDO::FETCH_ASSOC);
+
+        if (!$conv) {
             header('Location: ' . BASE_URL . 'chat');
             exit;
         }
 
-        // Leave: lose access (but chat history stays for others)
-        $pdo->prepare("UPDATE conversation_participants SET left_at = NOW(), hidden_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
-            ->execute([$cid, $meId]);
+        if ((string)($conv['type'] ?? '') === 'general') {
+            header('Location: ' . BASE_URL . 'chat&cid=' . $cid);
+            exit;
+        }
+
+        // mark left + hidden (so disappears)
+        $pdo->prepare("
+            UPDATE conversation_participants
+            SET left_at = NOW(), hidden_at = NOW()
+            WHERE conversation_id = ?
+              AND user_id = ?
+              AND left_at IS NULL
+        ")->execute([$cid, $me]);
+
+        $ownerId   = (int)($conv['owner_id'] ?? 0);
+        $createdBy = (int)($conv['created_by'] ?? 0);
+        $isOwner   = ($ownerId > 0) ? ($ownerId === $me) : ($createdBy === $me);
+
+        if ($isOwner) {
+            // choose next owner among remaining participants
+            $nextUserId = 0;
+
+            // prefer joined_at if exists
+            try {
+                $stN = $pdo->prepare("
+                    SELECT user_id
+                    FROM conversation_participants
+                    WHERE conversation_id = ?
+                      AND left_at IS NULL
+                    ORDER BY joined_at ASC
+                    LIMIT 1
+                ");
+                $stN->execute([$cid]);
+                $nextUserId = (int)($stN->fetchColumn() ?: 0);
+            } catch (Throwable $e) {
+                $stN = $pdo->prepare("
+                    SELECT user_id
+                    FROM conversation_participants
+                    WHERE conversation_id = ?
+                      AND left_at IS NULL
+                    ORDER BY user_id ASC
+                    LIMIT 1
+                ");
+                $stN->execute([$cid]);
+                $nextUserId = (int)($stN->fetchColumn() ?: 0);
+            }
+
+            if ($nextUserId > 0) {
+                // transfer owner if column exists
+                try {
+                    $pdo->prepare("UPDATE conversations SET owner_id = ? WHERE id = ?")
+                        ->execute([$nextUserId, $cid]);
+                } catch (Throwable $e) {
+                    // no owner_id -> ignore
+                }
+            } else {
+                // nobody left -> delete for all
+                $pdo->prepare("UPDATE conversations SET deleted_at = NOW(), deleted_by = ? WHERE id = ? AND deleted_at IS NULL")
+                    ->execute([$me, $cid]);
+            }
+        }
 
         header('Location: ' . BASE_URL . 'chat');
         exit;
     }
 
+    // Delete for everyone (only owner; not general)
     public function deleteConversation(): void
     {
         global $pdo;
 
         Auth::requireRole(['admin', 'employee', 'staff']);
 
-        $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid = (int)($_POST['cid'] ?? 0);
+        $me  = (int)($_SESSION['user']['id'] ?? 0);
+        $cid = (int)($_POST['conversation_id'] ?? 0);
 
-        if (!$this->chatV2Enabled() || $cid <= 0) {
+        if ($me <= 0 || $cid <= 0 || !$this->chatV2Enabled()) {
             header('Location: ' . BASE_URL . 'chat');
             exit;
         }
 
-        $st = $pdo->prepare("SELECT type, created_by FROM conversations WHERE id = ? LIMIT 1");
-        $st->execute([$cid]);
-        $row = $st->fetch(PDO::FETCH_ASSOC) ?: [];
-        $type = (string)($row['type'] ?? '');
-        $createdBy = (int)($row['created_by'] ?? 0);
+        $meta = $pdo->prepare("SELECT type, created_by, owner_id FROM conversations WHERE id = ? LIMIT 1");
+        $meta->execute([$cid]);
+        $c = $meta->fetch(PDO::FETCH_ASSOC);
 
-        if ($type === 'general' || $createdBy !== $meId) {
+        if (!$c) {
             header('Location: ' . BASE_URL . 'chat');
             exit;
         }
 
-        // Delete for everyone: mark conversation deleted
+        $type = (string)($c['type'] ?? '');
+        if ($type === 'general') {
+            header('Location: ' . BASE_URL . 'chat&cid=' . $cid);
+            exit;
+        }
+
+        $ownerId = (int)($c['owner_id'] ?? 0);
+        if ($ownerId <= 0) $ownerId = (int)($c['created_by'] ?? 0);
+
+        if ($ownerId !== $me) {
+            header('Location: ' . BASE_URL . 'chat&cid=' . $cid);
+            exit;
+        }
+
         $pdo->prepare("UPDATE conversations SET deleted_at = NOW(), deleted_by = ? WHERE id = ? AND deleted_at IS NULL")
-            ->execute([$meId, $cid]);
+            ->execute([$me, $cid]);
+
+        // hide for all (so disappears immediately)
+        $pdo->prepare("UPDATE conversation_participants SET hidden_at = NOW() WHERE conversation_id = ?")
+            ->execute([$cid]);
 
         header('Location: ' . BASE_URL . 'chat');
         exit;
@@ -494,13 +476,14 @@ class ChatController
     {
         static $enabled = null;
         if ($enabled !== null) return $enabled;
+
         global $pdo;
         try {
             $pdo->query("SELECT 1 FROM conversations LIMIT 1");
             $pdo->query("SELECT 1 FROM conversation_participants LIMIT 1");
             $pdo->query("SELECT 1 FROM conversation_messages LIMIT 1");
             $enabled = true;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $enabled = false;
         }
         return $enabled;
@@ -515,9 +498,10 @@ class ChatController
             $cid = $this->createConversation('general', 'General', $meId);
         }
 
-        // Ensure all internal users are members (safe idempotent)
+        // ensure all internal users are members
         $internal = $pdo->query("SELECT id FROM users WHERE role IN ('admin','employee','staff') AND is_active = 1")
             ->fetchAll(PDO::FETCH_COLUMN);
+
         foreach ($internal as $uid) {
             $this->addParticipant($cid, (int)$uid);
         }
@@ -528,15 +512,24 @@ class ChatController
     private function createConversation(string $type, ?string $title, int $createdBy): int
     {
         global $pdo;
-        $stmt = $pdo->prepare("INSERT INTO conversations (type, title, created_by) VALUES (?, ?, ?)");
-        $stmt->execute([$type, $title, $createdBy]);
+
+        // prefer owner_id when exists
+        try {
+            $stmt = $pdo->prepare("INSERT INTO conversations (type, title, created_by, owner_id) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$type, $title, $createdBy, $createdBy]);
+        } catch (Throwable $e) {
+            $stmt = $pdo->prepare("INSERT INTO conversations (type, title, created_by) VALUES (?, ?, ?)");
+            $stmt->execute([$type, $title, $createdBy]);
+        }
+
         return (int)$pdo->lastInsertId();
     }
 
     private function addParticipant(int $cid, int $uid): void
     {
         global $pdo;
-        // Idempotent insert
+
+        // idempotent insert
         $pdo->prepare("INSERT IGNORE INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)")
             ->execute([$cid, $uid]);
     }
@@ -544,15 +537,15 @@ class ChatController
     private function isParticipant(int $cid, int $uid): bool
     {
         global $pdo;
-        // Must be a participant that didn't leave, and conversation not deleted
+
         $st = $pdo->prepare(
-            "SELECT 1\n"
-            . "FROM conversation_participants p\n"
-            . "JOIN conversations c ON c.id = p.conversation_id\n"
-            . "WHERE p.conversation_id = ? AND p.user_id = ?\n"
-            . "  AND (p.left_at IS NULL)\n"
-            . "  AND (c.deleted_at IS NULL)\n"
-            . "LIMIT 1"
+            "SELECT 1
+             FROM conversation_participants p
+             JOIN conversations c ON c.id = p.conversation_id
+             WHERE p.conversation_id = ? AND p.user_id = ?
+               AND p.left_at IS NULL
+               AND c.deleted_at IS NULL
+             LIMIT 1"
         );
         $st->execute([$cid, $uid]);
         return (bool)$st->fetchColumn();
@@ -561,7 +554,7 @@ class ChatController
     private function unhideIfNeeded(int $cid, int $uid): void
     {
         global $pdo;
-        // If user hid the chat before, unhide when opening it.
+
         $pdo->prepare("UPDATE conversation_participants SET hidden_at = NULL WHERE conversation_id = ? AND user_id = ? AND hidden_at IS NOT NULL")
             ->execute([$cid, $uid]);
     }
@@ -570,21 +563,29 @@ class ChatController
     {
         global $pdo;
 
-        $st = $pdo->prepare("SELECT id, type, title, created_by, created_at FROM conversations WHERE id = ? LIMIT 1");
+        $st = $pdo->prepare("SELECT id, type, title, created_by, owner_id, deleted_at, deleted_by, created_at FROM conversations WHERE id = ? LIMIT 1");
         $st->execute([$cid]);
         $c = $st->fetch(PDO::FETCH_ASSOC);
         if (!$c) return ['id' => $cid, 'type' => 'unknown', 'title' => ''];
 
-        // DM title fallback: other participant name
+        // DM title fallback = other participant
         if (($c['type'] ?? '') === 'dm') {
-            $st2 = $pdo->prepare("SELECT u.name
+            $meId = (int)($_SESSION['user']['id'] ?? 0);
+            $st2 = $pdo->prepare("
+                SELECT u.name
                 FROM conversation_participants p
                 JOIN users u ON u.id = p.user_id
-                WHERE p.conversation_id = ? AND p.user_id <> ?
-                LIMIT 1");
-            $st2->execute([$cid, (int)($_SESSION['user']['id'] ?? 0)]);
+                WHERE p.conversation_id = ?
+                  AND p.user_id <> ?
+                LIMIT 1
+            ");
+            $st2->execute([$cid, $meId]);
             $other = $st2->fetchColumn();
             if ($other) $c['title'] = (string)$other;
+        }
+
+        if (($c['type'] ?? '') === 'general' && trim((string)($c['title'] ?? '')) === '') {
+            $c['title'] = 'General';
         }
 
         return $c;
@@ -594,29 +595,34 @@ class ChatController
     {
         global $pdo;
 
-        // list with last message time
         $st = $pdo->prepare(
-            "SELECT c.id, c.type, c.title, "
-            . "(SELECT cm.created_at FROM conversation_messages cm WHERE cm.conversation_id = c.id ORDER BY cm.id DESC LIMIT 1) AS last_at "
-            . "FROM conversations c "
-            . "JOIN conversation_participants p ON p.conversation_id = c.id "
-            . "WHERE p.user_id = ? "
-            . "  AND p.left_at IS NULL "
-            . "  AND p.hidden_at IS NULL "
-            . "  AND c.deleted_at IS NULL "
-            . "ORDER BY (last_at IS NULL) ASC, last_at DESC, c.id DESC"
+            "SELECT c.id, c.type, c.title,
+                (SELECT cm.created_at
+                 FROM conversation_messages cm
+                 WHERE cm.conversation_id = c.id
+                 ORDER BY cm.id DESC
+                 LIMIT 1) AS last_at
+             FROM conversations c
+             JOIN conversation_participants p ON p.conversation_id = c.id
+             WHERE p.user_id = ?
+               AND p.left_at IS NULL
+               AND p.hidden_at IS NULL
+               AND c.deleted_at IS NULL
+             ORDER BY (last_at IS NULL) ASC, last_at DESC, c.id DESC"
         );
         $st->execute([$meId]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
 
-        // fill DM titles
         foreach ($rows as &$c) {
             if (($c['type'] ?? '') === 'dm') {
-                $st2 = $pdo->prepare("SELECT u.name
+                $st2 = $pdo->prepare("
+                    SELECT u.name
                     FROM conversation_participants p
                     JOIN users u ON u.id = p.user_id
-                    WHERE p.conversation_id = ? AND p.user_id <> ?
-                    LIMIT 1");
+                    WHERE p.conversation_id = ?
+                      AND p.user_id <> ?
+                    LIMIT 1
+                ");
                 $st2->execute([(int)$c['id'], $meId]);
                 $other = $st2->fetchColumn();
                 $c['title'] = $other ? (string)$other : 'DM';
@@ -634,12 +640,13 @@ class ChatController
         global $pdo;
 
         $st = $pdo->prepare(
-            "SELECT c.id "
-            . "FROM conversations c "
-            . "JOIN conversation_participants p1 ON p1.conversation_id = c.id AND p1.user_id = ? "
-            . "JOIN conversation_participants p2 ON p2.conversation_id = c.id AND p2.user_id = ? "
-            . "WHERE c.type = 'dm' "
-            . "LIMIT 1"
+            "SELECT c.id
+             FROM conversations c
+             JOIN conversation_participants p1 ON p1.conversation_id = c.id AND p1.user_id = ?
+             JOIN conversation_participants p2 ON p2.conversation_id = c.id AND p2.user_id = ?
+             WHERE c.type = 'dm'
+               AND c.deleted_at IS NULL
+             LIMIT 1"
         );
         $st->execute([$a, $b]);
         return (int)($st->fetchColumn() ?: 0);
@@ -648,19 +655,29 @@ class ChatController
     private function touchDelivered(int $cid, int $meId): void
     {
         global $pdo;
-        $pdo->prepare("UPDATE conversation_participants SET last_delivered_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
-            ->execute([$cid, $meId]);
+
+        // if column doesn't exist, it will throw -> ignore
+        try {
+            $pdo->prepare("UPDATE conversation_participants SET last_delivered_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
+                ->execute([$cid, $meId]);
+        } catch (Throwable $e) {}
     }
 
     private function getMessages(int $cid, int $sinceId): array
     {
         global $pdo;
+
         $st = $pdo->prepare(
-            "SELECT cm.id, cm.sender_id AS user_id, cm.body AS message, cm.created_at, u.name "
-            . "FROM conversation_messages cm "
-            . "JOIN users u ON u.id = cm.sender_id "
-            . "WHERE cm.conversation_id = ? AND cm.id > ? "
-            . "ORDER BY cm.id ASC"
+            "SELECT cm.id,
+                    cm.sender_id AS user_id,
+                    cm.body AS message,
+                    cm.created_at,
+                    u.name
+             FROM conversation_messages cm
+             JOIN users u ON u.id = cm.sender_id
+             WHERE cm.conversation_id = ?
+               AND cm.id > ?
+             ORDER BY cm.id ASC"
         );
         $st->execute([$cid, $sinceId]);
         return $st->fetchAll(PDO::FETCH_ASSOC);
@@ -673,17 +690,19 @@ class ChatController
         $st = $pdo->prepare("SELECT created_at FROM conversation_messages WHERE id = ? AND conversation_id = ? AND sender_id = ? LIMIT 1");
         $st->execute([$messageId, $cid, $senderId]);
         $createdAt = $st->fetchColumn();
+
         if (!$createdAt) {
             return ['id' => $messageId, 'delivered' => false, 'read' => false];
         }
 
-        // Delivered: at least one other participant has last_delivered_at >= created_at
+        // Delivered/read: any other participant with last_* >= created_at
         $st2 = $pdo->prepare(
-            "SELECT "
-            . "MAX(CASE WHEN user_id <> ? AND last_delivered_at IS NOT NULL AND last_delivered_at >= ? THEN 1 ELSE 0 END) AS any_delivered, "
-            . "MAX(CASE WHEN user_id <> ? AND last_read_at IS NOT NULL AND last_read_at >= ? THEN 1 ELSE 0 END) AS any_read "
-            . "FROM conversation_participants "
-            . "WHERE conversation_id = ? AND left_at IS NULL"
+            "SELECT
+                MAX(CASE WHEN user_id <> ? AND last_delivered_at IS NOT NULL AND last_delivered_at >= ? THEN 1 ELSE 0 END) AS any_delivered,
+                MAX(CASE WHEN user_id <> ? AND last_read_at IS NOT NULL AND last_read_at >= ? THEN 1 ELSE 0 END) AS any_read
+             FROM conversation_participants
+             WHERE conversation_id = ?
+               AND left_at IS NULL"
         );
         $st2->execute([$senderId, $createdAt, $senderId, $createdAt, $cid]);
         $r = $st2->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -709,21 +728,13 @@ class ChatController
 
         $in = implode(',', array_fill(0, count($ids), '?'));
 
-        if ($this->chatV2Enabled()) {
-            $stmt = $pdo->prepare(
-                "SELECT id, message_id, original_name, mime_type, size_bytes "
-                . "FROM conversation_attachments "
-                . "WHERE message_id IN ($in) "
-                . "ORDER BY id ASC"
-            );
-        } else {
-            $stmt = $pdo->prepare(
-                "SELECT id, message_id, original_name, mime_type, size_bytes "
-                . "FROM chat_attachments "
-                . "WHERE message_id IN ($in) "
-                . "ORDER BY id ASC"
-            );
-        }
+        // v2 attachments
+        $stmt = $pdo->prepare(
+            "SELECT id, message_id, original_name, mime_type, size_bytes
+             FROM conversation_attachments
+             WHERE message_id IN ($in)
+             ORDER BY id ASC"
+        );
 
         $stmt->execute($ids);
         $atts = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -784,18 +795,11 @@ class ChatController
 
             if (!move_uploaded_file($tmp, $uploadDir . $stored)) continue;
 
-            if ($this->chatV2Enabled()) {
-                $stmt = $pdo->prepare(
-                    "INSERT INTO conversation_attachments (message_id, uploaded_by, original_name, stored_name, mime_type, size_bytes) "
-                    . "VALUES (?, ?, ?, ?, ?, ?)"
-                );
-            } else {
-                $stmt = $pdo->prepare(
-                    "INSERT INTO chat_attachments (message_id, uploaded_by, original_name, stored_name, mime_type, size_bytes) "
-                    . "VALUES (?, ?, ?, ?, ?, ?)"
-                );
-            }
-
+            $stmt = $pdo->prepare("
+                INSERT INTO conversation_attachments
+                  (message_id, uploaded_by, original_name, stored_name, mime_type, size_bytes)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
             $stmt->execute([
                 $messageId,
                 $userId,
@@ -813,72 +817,84 @@ class ChatController
     private function legacyIndex(): void
     {
         global $pdo;
-        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
+
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
 
         $stmt = $pdo->query("SELECT MAX(id) AS m FROM messages");
         $_SESSION['chat_last_seen_id'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
 
         $messages = $pdo->query(
-            "SELECT m.id, m.user_id, m.message, m.created_at, m.delivered_at, m.read_at, u.name "
-            . "FROM messages m "
-            . "JOIN users u ON u.id = m.user_id "
-            . "ORDER BY m.id ASC "
-            . "LIMIT 200"
+            "SELECT m.id, m.user_id, m.message, m.created_at, m.delivered_at, m.read_at, u.name
+             FROM messages m
+             JOIN users u ON u.id = m.user_id
+             ORDER BY m.id ASC
+             LIMIT 200"
         )->fetchAll(PDO::FETCH_ASSOC);
 
         $messages = $this->attachAttachments($messages);
         foreach ($messages as &$m) {
-            $m['is_me'] = ((int)$m['user_id'] === $currentUserId);
+            $m['is_me'] = ((int)$m['user_id'] === $meId);
         }
         unset($m);
 
         $conversations = [];
         $activeConversation = ['id' => 0, 'type' => 'legacy', 'title' => 'General'];
-        $users = $pdo->query("SELECT id, name, role FROM users WHERE role IN ('admin','employee','staff') AND is_active = 1 ORDER BY role DESC, name ASC")
-            ->fetchAll(PDO::FETCH_ASSOC);
 
+        $stUsers = $pdo->prepare("SELECT id, name, role FROM users WHERE role IN ('admin','employee','staff') AND is_active = 1 AND id <> ? ORDER BY role DESC, name ASC");
+        $stUsers->execute([$meId]);
+        $users = $stUsers->fetchAll(PDO::FETCH_ASSOC);
+
+        $pageTitle = 'Chat intern';
         require __DIR__ . '/../views/chat.php';
     }
 
     private function legacyStore(): void
     {
         global $pdo;
+
         $userId = (int)($_SESSION['user']['id'] ?? 0);
         $msg = trim((string)($_POST['message'] ?? ''));
+
         $hasFiles = isset($_FILES['files']) && !empty($_FILES['files']['name']);
         if ($msg === '' && !$hasFiles) {
             $this->json(['ok' => true]);
         }
+
         $stmt = $pdo->prepare("INSERT INTO messages (user_id, message) VALUES (?, ?)");
         $stmt->execute([$userId, $msg]);
         $messageId = (int)$pdo->lastInsertId();
+
         if ($hasFiles) $this->handleChatAttachments($messageId, $userId);
+
         $this->json(['ok' => true, 'id' => $messageId]);
     }
 
     private function legacyPoll(): void
     {
         global $pdo;
+
         $since = (int)($_GET['since'] ?? 0);
-        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
 
         $pdo->prepare("UPDATE messages SET delivered_at = COALESCE(delivered_at, NOW())
-                   WHERE id > ? AND user_id <> ? AND delivered_at IS NULL")
-            ->execute([$since, $currentUserId]);
+                       WHERE id > ? AND user_id <> ? AND delivered_at IS NULL")
+            ->execute([$since, $meId]);
 
         $stmt = $pdo->prepare(
-            "SELECT m.id, m.user_id, m.message, m.created_at, m.delivered_at, m.read_at, u.name "
-            . "FROM messages m "
-            . "JOIN users u ON u.id = m.user_id "
-            . "WHERE m.id > ? "
-            . "ORDER BY m.id ASC"
+            "SELECT m.id, m.user_id, m.message, m.created_at, m.delivered_at, m.read_at, u.name
+             FROM messages m
+             JOIN users u ON u.id = m.user_id
+             WHERE m.id > ?
+             ORDER BY m.id ASC"
         );
         $stmt->execute([$since]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $rows = $this->attachAttachments($rows);
         foreach ($rows as &$m) {
-            $m['is_me'] = ((int)$m['user_id'] === $currentUserId);
+            $m['is_me'] = ((int)$m['user_id'] === $meId);
         }
         unset($m);
 
@@ -888,14 +904,18 @@ class ChatController
     private function legacyMarkRead(): void
     {
         global $pdo;
-        $currentUserId = (int)($_SESSION['user']['id'] ?? 0);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+
         try {
             $pdo->query("SELECT read_at FROM messages LIMIT 1");
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->json(['ok' => true]);
         }
+
         $pdo->prepare("UPDATE messages SET read_at = COALESCE(read_at, NOW()) WHERE user_id <> ? AND read_at IS NULL")
-            ->execute([$currentUserId]);
+            ->execute([$meId]);
+
         $this->json(['ok' => true]);
     }
 
