@@ -453,3 +453,46 @@
     initDrawer();
   }
 })();
+
+ // Badge behavior (clasic): badge-ul apare doar când valoarea este > 0
+function setBadge(el, value) {
+  if (!el) return;
+  const n = Number.isFinite(Number(value)) ? parseInt(value, 10) : 0;
+  el.textContent = String(n);
+
+  // show only when > 0
+  el.style.display = (n > 0) ? '' : 'none';
+}
+
+async function pollBadges() {
+  try {
+    const root = window.APP_ROOT || '/';
+    const url = root.replace(/\/?$/, '/') + '?route=admin/badges-poll';
+
+    const res = await fetch(url, { credentials: 'same-origin' });
+    if (!res.ok) return;
+
+    const data = await res.json();
+
+    // OPTIONAL: vezi ce primești (poți șterge după ce confirmi)
+    // console.log('badges:', data);
+
+    // Fallback: suportă mai multe denumiri de chei
+    const tickets = data.tickets_new ?? data.tickets_open ?? data.tickets ?? 0;
+    const tasks   = data.tasks_new   ?? data.tasks_pending ?? data.tasks ?? 0;
+    const chat    = data.chat_new    ?? data.chat_unread ?? data.chat ?? 0;
+
+    setBadge(document.getElementById('badgeTickets'), tickets);
+    setBadge(document.getElementById('badgeTasks'), tasks);
+    setBadge(document.getElementById('badgeChat'), chat);
+
+    setBadge(document.getElementById('badgeTicketsMobile'), tickets);
+    setBadge(document.getElementById('badgeTasksMobile'), tasks);
+    setBadge(document.getElementById('badgeChatMobile'), chat);
+  } catch (e) {}
+}
+
+
+// init
+pollBadges();
+setInterval(pollBadges, 15000);

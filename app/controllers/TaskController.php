@@ -6,6 +6,18 @@ class TaskController
     {
         global $pdo;
 
+        // Badge baseline: when I open Tasks, mark them as seen (per-user)
+        Auth::requireRole(['admin', 'employee', 'staff']);
+        $me = (int)Auth::id();
+        try {
+            $pdo->query("SELECT last_seen_tasks_at FROM users LIMIT 1");
+        } catch (Throwable $e) {
+            try { $pdo->exec("ALTER TABLE users ADD COLUMN last_seen_tasks_at DATETIME NULL"); } catch (Throwable $e2) {}
+        }
+        try {
+            $pdo->prepare("UPDATE users SET last_seen_tasks_at = NOW() WHERE id=? LIMIT 1")->execute([$me]);
+        } catch (Throwable $e) {}
+
         $filter = $_GET['filter'] ?? 'all';
         $q = trim($_GET['q'] ?? '');
         $q_done = trim($_GET['q_done'] ?? '');

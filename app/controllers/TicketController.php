@@ -156,6 +156,17 @@ class TicketController
     {
         global $pdo;
 
+        // Badge baseline: when I open Tickets, mark them as seen (per-user)
+        $me = (int)Auth::id();
+        try {
+            $pdo->query("SELECT last_seen_tickets_at FROM users LIMIT 1");
+        } catch (Throwable $e) {
+            try { $pdo->exec("ALTER TABLE users ADD COLUMN last_seen_tickets_at DATETIME NULL"); } catch (Throwable $e2) {}
+        }
+        try {
+            $pdo->prepare("UPDATE users SET last_seen_tickets_at = NOW() WHERE id=? LIMIT 1")->execute([$me]);
+        } catch (Throwable $e) {}
+
         // Tabs: open | resolved | deleted
         $tab = (string)($_GET['tab'] ?? 'open');
         if (!in_array($tab, ['open', 'resolved', 'deleted'], true)) {

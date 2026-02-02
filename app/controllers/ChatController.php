@@ -68,6 +68,13 @@ class ChatController
         // ✅ Notificări (badge): când userul intră în Chat, marcăm tot ce există acum ca "văzut"
         // (baseline global pentru conversațiile în care participă).
         try {
+            // DB baseline (persists across refresh/devices)
+            try {
+                $pdo->query("SELECT last_seen_chat_v2_msg_id FROM users LIMIT 1");
+            } catch (Throwable $e) {
+                try { $pdo->exec("ALTER TABLE users ADD COLUMN last_seen_chat_v2_msg_id INT NULL"); } catch (Throwable $e2) {}
+            }
+
             $st = $pdo->prepare("
                 SELECT COALESCE(MAX(cm.id), 0) AS m
                 FROM conversation_messages cm
@@ -80,7 +87,9 @@ class ChatController
                  AND c.deleted_at IS NULL
             ");
             $st->execute([$meId]);
-            $_SESSION['chat_v2_last_seen_id'] = (int)($st->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+            $max = (int)($st->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+            $_SESSION['chat_v2_last_seen_id'] = $max;
+            try { $pdo->prepare("UPDATE users SET last_seen_chat_v2_msg_id=? WHERE id=? LIMIT 1")->execute([$max, $meId]); } catch (Throwable $e) {}
         } catch (Throwable $e) {
             // ignore
         }
