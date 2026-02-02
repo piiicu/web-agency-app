@@ -34,6 +34,7 @@ $protected = [
     'dashboard',
     'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite',
     'chat', 'chat-poll', 'chat-mark-read', 'chat-dm', 'chat-group',
+    'chat-unread-counts',
     'chat-attachment',
     'admin/dashboard',
     'client/dashboard',
@@ -157,6 +158,12 @@ if ($route === 'chat-poll' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+// Live unread counts per conversație (pentru dropdown-ul de grupuri)
+if ($route === 'chat-unread-counts' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new ChatController())->unreadCounts();
+    exit;
+}
+
 // WhatsApp-like conversation actions (v2)
 if ($route === 'chat-hide' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     (new ChatController())->hideConversation();
@@ -173,11 +180,11 @@ if ($route === 'chat-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+// MARK CHAT AS READ (v2) - keep single source of truth in ChatController
 if ($route === 'chat-mark-read' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     (new ChatController())->markRead();
     exit;
 }
-
 
 if ($route === 'chat-attachment' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     Auth::requireRole(['admin','employee','staff']);

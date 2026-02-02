@@ -489,6 +489,51 @@ async function pollBadges() {
     setBadge(document.getElementById('badgeTicketsMobile'), tickets);
     setBadge(document.getElementById('badgeTasksMobile'), tasks);
     setBadge(document.getElementById('badgeChatMobile'), chat);
+
+    // If we're on Chat page, also refresh unread counts per conversation in the dropdown
+    // (WhatsApp-like: "General • 2"). Keeps menu badge behavior intact.
+    refreshChatConversationUnread();
+  } catch (e) {}
+}
+
+let __chatConvBaseLabels = null;
+
+function initChatConvBaseLabels(selectEl) {
+  if (__chatConvBaseLabels) return;
+  __chatConvBaseLabels = {};
+  const opts = Array.from(selectEl.options || []);
+  for (const opt of opts) {
+    const id = String(opt.value || '');
+    if (!id) continue;
+    // Strip any existing " • N" suffix
+    const base = String(opt.textContent || '').replace(/\s•\s\d+\s*$/u, '').trim();
+    __chatConvBaseLabels[id] = base || String(opt.textContent || '').trim();
+  }
+}
+
+async function refreshChatConversationUnread() {
+  try {
+    const selectEl = document.querySelector('select[data-chat-conv]');
+    if (!selectEl) return; // not on chat page
+
+    initChatConvBaseLabels(selectEl);
+
+    const root = window.APP_ROOT || '/';
+    const url = root.replace(/\/?$/, '/') + '?route=chat-unread-counts';
+
+    const res = await fetch(url, { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json || json.ok !== true || typeof json.data !== 'object') return;
+
+    const counts = json.data;
+    for (const opt of Array.from(selectEl.options || [])) {
+      const id = String(opt.value || '');
+      if (!id) continue;
+      const base = (__chatConvBaseLabels && __chatConvBaseLabels[id]) ? __chatConvBaseLabels[id] : String(opt.textContent || '').replace(/\s•\s\d+\s*$/u, '').trim();
+      const n = Number.isFinite(Number(counts[id])) ? parseInt(counts[id], 10) : 0;
+      opt.textContent = (n > 0) ? `${base} • ${n}` : base;
+    }
   } catch (e) {}
 }
 

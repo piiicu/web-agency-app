@@ -16,11 +16,11 @@ function isImgMime(?string $mime): bool
 ?>
 
 <?php
-  $cid = (int)($activeConversation['id'] ?? 0);
-  // Active conversation meta (used for header actions / permissions)
-  $meId = (int)($_SESSION['user']['id'] ?? 0);
-  $aType = (string)($activeConversation['type'] ?? 'general');
-  $aCreatedBy = (int)($activeConversation['created_by'] ?? 0);
+$cid = (int)($activeConversation['id'] ?? 0);
+// Active conversation meta (used for header actions / permissions)
+$meId = (int)($_SESSION['user']['id'] ?? 0);
+$aType = (string)($activeConversation['type'] ?? 'general');
+$aCreatedBy = (int)($activeConversation['created_by'] ?? 0);
 ?>
 
 <div class="page-header">
@@ -38,8 +38,9 @@ function isImgMime(?string $mime): bool
         <select id="chatConv" class="select" data-chat-conv data-cselect>
           <?php foreach ($conversations as $c): ?>
             <?php $id = (int)($c['id'] ?? 0); ?>
+            <?php $uCount = (int)($c['unread_count'] ?? 0); ?>
             <option value="<?= $id ?>" <?= $id === $cid ? 'selected' : '' ?>>
-              <?= htmlspecialchars((string)($c['title'] ?? 'Conversație')) ?>
+              <?= htmlspecialchars((string)($c['title'] ?? 'Conversație')) ?><?= $uCount > 0 ? ' • ' . $uCount : '' ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -75,42 +76,42 @@ function isImgMime(?string $mime): bool
 
     <!-- Create DM / Group -->
     <?php if (!empty($users) && is_array($users)): ?>
-<button type="button" class="btn btn-ghost chat-hide-mobile" data-chat-new-open>+ Nou</button>
+      <button type="button" class="btn btn-ghost chat-hide-mobile" data-chat-new-open>+ Nou</button>
 
-<div class="chat-new" data-chat-new hidden>
-  <div class="chat-new__backdrop" data-chat-new-close></div>
-  <div class="chat-new__dialog" role="dialog" aria-modal="true" aria-label="Conversație nouă">
-    <div class="chat-new__head">
-      <div class="chat-new__title">Conversație nouă</div>
-      <button type="button" class="chat-new__close" data-chat-new-close aria-label="Închide">✕</button>
-    </div>
-
-    <div class="chat-new__body">
-      <div class="chat-new__section">
-        <div class="chat-new__label">Creează conversație (grup sau privat)</div>
-        <form method="POST" action="<?= BASE_URL ?>chat-group" class="chat-new__group">
-          <input class="input" name="title" placeholder="Nume grup (opțional)">
-
-          <div class="chat-new__users" role="group" aria-label="Participanți">
-            <?php $meUid = (int)($_SESSION['user']['id'] ?? 0); ?>
-            <?php foreach ($users as $u): ?>
-              <?php if ((int)$u['id'] === $meUid) continue; ?>
-              <label class="chat-new__user">
-                <input type="checkbox" name="user_ids[]" value="<?= (int)$u['id'] ?>">
-                <span><?= htmlspecialchars($u['name'] . ' (' . $u['role'] . ')') ?></span>
-              </label>
-            <?php endforeach; ?>
+      <div class="chat-new" data-chat-new hidden>
+        <div class="chat-new__backdrop" data-chat-new-close></div>
+        <div class="chat-new__dialog" role="dialog" aria-modal="true" aria-label="Conversație nouă">
+          <div class="chat-new__head">
+            <div class="chat-new__title">Conversație nouă</div>
+            <button type="button" class="chat-new__close" data-chat-new-close aria-label="Închide">✕</button>
           </div>
 
-          <button class="btn" type="submit">Creează</button>
-          <div class="chat-new__hint" data-chat-new-hint style="display:none;"></div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+          <div class="chat-new__body">
+            <div class="chat-new__section">
+              <div class="chat-new__label">Creează conversație (grup sau privat)</div>
+              <form method="POST" action="<?= BASE_URL ?>chat-group" class="chat-new__group">
+                <input class="input" name="title" placeholder="Nume grup (opțional)">
 
-<?php endif; ?>
+                <div class="chat-new__users" role="group" aria-label="Participanți">
+                  <?php $meUid = (int)($_SESSION['user']['id'] ?? 0); ?>
+                  <?php foreach ($users as $u): ?>
+                    <?php if ((int)$u['id'] === $meUid) continue; ?>
+                    <label class="chat-new__user">
+                      <input type="checkbox" name="user_ids[]" value="<?= (int)$u['id'] ?>">
+                      <span><?= htmlspecialchars($u['name'] . ' (' . $u['role'] . ')') ?></span>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+
+                <button class="btn" type="submit">Creează</button>
+                <div class="chat-new__hint" data-chat-new-hint style="display:none;"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <?php endif; ?>
 
     <!-- Mobile: one menu for all actions (keeps UI clean) -->
     <div class="chat-topmenu" data-chat-topmenu>
@@ -291,7 +292,7 @@ function isImgMime(?string $mime): bool
 
 
   // New conversation modal (DM / Group) - overlay, no layout shift
-  (function () {
+  (function() {
     const openBtns = Array.from(document.querySelectorAll('[data-chat-new-open]'));
     const modal = document.querySelector('[data-chat-new]');
     if (!openBtns.length || !modal) return;
@@ -310,7 +311,9 @@ function isImgMime(?string $mime): bool
       document.body.classList.add('has-modal');
       // focus first input if present
       const first = modal.querySelector('select, input, button');
-      if (first) first.focus({ preventScroll: true });
+      if (first) first.focus({
+        preventScroll: true
+      });
     }
 
     function close() {
@@ -318,10 +321,12 @@ function isImgMime(?string $mime): bool
       modal.hidden = true;
       document.body.classList.remove('has-modal');
       // focus the last trigger (better UX when there are multiple open buttons)
-      const t = window.__chatNewLastTrigger && document.contains(window.__chatNewLastTrigger)
-        ? window.__chatNewLastTrigger
-        : openBtns[0];
-      t?.focus?.({ preventScroll: true });
+      const t = window.__chatNewLastTrigger && document.contains(window.__chatNewLastTrigger) ?
+        window.__chatNewLastTrigger :
+        openBtns[0];
+      t?.focus?.({
+        preventScroll: true
+      });
     }
 
     openBtns.forEach((b) => {
@@ -443,7 +448,9 @@ function isImgMime(?string $mime): bool
     focusConvBtn.addEventListener('click', () => {
       closeTopmenu();
       if (convSelect) {
-        convSelect.focus({ preventScroll: true });
+        convSelect.focus({
+          preventScroll: true
+        });
         // On some mobile browsers, focusing is enough; selecting is done by the user.
       }
     });
@@ -528,7 +535,7 @@ function isImgMime(?string $mime): bool
     `;
   }
 
-  
+
   function checksHtml(m) {
     if (!m || !m.is_me) return "";
     // default until statuses come from server
@@ -553,7 +560,7 @@ function isImgMime(?string $mime): bool
     }
   }
 
-function appendMessage(m) {
+  function appendMessage(m) {
     const mid = Number(m?.id || 0);
     const isMe = !!m?.is_me;
 
@@ -583,42 +590,62 @@ function appendMessage(m) {
     box.appendChild(row);
   }
 
-  async function poll() {
-    try {
-      const stickToBottom = isNearBottom();
+async function poll() {
+  try {
+    const stickToBottom = isNearBottom();
 
-      const res = await fetch(CHAT_POLL_ROUTE + "&since=" + encodeURIComponent(String(sinceId)), {
-        headers: {
-          "Accept": "application/json"
-        },
+    const res = await fetch(
+      CHAT_POLL_ROUTE + "&since=" + encodeURIComponent(String(sinceId)),
+      {
+        headers: { "Accept": "application/json" },
         credentials: "same-origin"
-      });
-      if (!res.ok) return;
-
-      const data = await res.json();
-      if (!data) return;
-      if (data.statuses && Array.isArray(data.statuses)) {
-        data.statuses.forEach(s => applyStatus(s.id, !!s.delivered, !!s.read));
       }
-      if (!Array.isArray(data.messages) || data.messages.length === 0) return;
+    );
+    if (!res.ok) return;
 
-      data.messages.forEach(msg => {
-        appendMessage(msg);
-        sinceId = Math.max(sinceId, Number(msg?.id || 0));
-      });
+    const data = await res.json();
+    if (!data) return;
 
-      if (stickToBottom) scrollToBottom();
+    if (data.statuses && Array.isArray(data.statuses)) {
+      data.statuses.forEach(s => applyStatus(s.id, !!s.delivered, !!s.read));
+    }
 
-      // If search is active, re-run highlight (app.js listens on input)
-      if (searchInput && searchInput.value.trim()) {
-        try {
-          searchInput.dispatchEvent(new Event('input', {
-            bubbles: true
-          }));
-        } catch (e) {}
+    if (!Array.isArray(data.messages) || data.messages.length === 0) return;
+
+    console.log('poll got messages:', data.messages.length, 'markRead type:', typeof markRead);
+
+    // append messages
+    data.messages.forEach(msg => {
+      appendMessage(msg);
+      sinceId = Math.max(sinceId, Number(msg?.id || 0));
+    });
+
+    if (stickToBottom) scrollToBottom();
+
+    // mark read after render
+    try {
+      if (typeof markRead === 'function') {
+        markRead();
+        console.log('markRead called');
+      } else {
+        console.warn('markRead is not a function');
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('markRead error:', e);
+    }
+
+    // search highlight refresh
+    if (searchInput && searchInput.value.trim()) {
+      try {
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.error('poll error:', e);
   }
+}
+
+
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -668,6 +695,7 @@ function appendMessage(m) {
       menu.hidden = true;
       btn.setAttribute('aria-expanded', 'false');
     }
+
     function openMenu() {
       menu.hidden = false;
       btn.setAttribute('aria-expanded', 'true');
@@ -689,27 +717,29 @@ function appendMessage(m) {
   })();
 
   async function markRead() {
-  // doar dacă user chiar vede pagina
-  if (document.visibilityState !== 'visible') return;
-  if (!document.hasFocus()) return;
+    // doar dacă user chiar vede pagina
+    if (document.visibilityState !== 'visible') return;
+    if (!document.hasFocus()) return;
 
-  try {
-    await fetch(CHAT_MARK_READ_ROUTE, {
-      method: "POST",
-      headers: { "Accept": "application/json" },
-      credentials: "same-origin"
-    });
-  } catch (e) {}
-}
+    try {
+      await fetch(CHAT_MARK_READ_ROUTE, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json"
+        },
+        credentials: "same-origin"
+      });
+    } catch (e) {}
+  }
 
-// când revine tab-ul activ / focus
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') markRead();
-});
-window.addEventListener('focus', markRead);
+  // când revine tab-ul activ / focus
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') markRead();
+  });
+  window.addEventListener('focus', markRead);
 
-// și imediat la încărcare (dacă e vizibil)
-markRead();
+  // și imediat la încărcare (dacă e vizibil)
+  markRead();
 
 
   scrollToBottom();
@@ -718,14 +748,14 @@ markRead();
 
 
 <script>
-(function(){
-  function ensureConfirm(){
-    let el = document.getElementById("uiConfirm");
-    if (el) return el;
-    el = document.createElement("div");
-    el.id = "uiConfirm";
-    el.className = "ui-confirm";
-    el.innerHTML = `
+  (function() {
+    function ensureConfirm() {
+      let el = document.getElementById("uiConfirm");
+      if (el) return el;
+      el = document.createElement("div");
+      el.id = "uiConfirm";
+      el.className = "ui-confirm";
+      el.innerHTML = `
       <div class="ui-confirm__backdrop" data-ui-confirm-close></div>
       <div class="ui-confirm__dialog" role="dialog" aria-modal="true" aria-label="Confirmare">
         <div class="ui-confirm__title">Confirmare</div>
@@ -735,27 +765,37 @@ markRead();
           <button type="button" id="uiConfirmYes" class="btn">OK</button>
         </div>
       </div>`;
-    document.body.appendChild(el);
-    function hide(){ el.classList.remove('is-open'); el.__cb = null; }
-    el.querySelectorAll('[data-ui-confirm-close]').forEach((n) => n.addEventListener('click', hide));
-    el.hide = hide;
-    el.show = function(msg, cb){
-      el.querySelector("#uiConfirmMsg").textContent = msg;
-      el.__cb = cb;
-      el.classList.add('is-open');
-      el.querySelector("#uiConfirmYes").onclick = function(){ const f = el.__cb; hide(); if (f) f(); };
-    };
-    return el;
-  }
+      document.body.appendChild(el);
 
-  document.addEventListener("submit", function(e){
-    const form = e.target;
-    if (!form || !form.getAttribute) return;
-    const msg = form.getAttribute("data-confirm");
-    if (!msg) return;
-    e.preventDefault();
-    ensureConfirm().show(msg, function(){ form.submit(); });
-  }, true);
-})();
+      function hide() {
+        el.classList.remove('is-open');
+        el.__cb = null;
+      }
+      el.querySelectorAll('[data-ui-confirm-close]').forEach((n) => n.addEventListener('click', hide));
+      el.hide = hide;
+      el.show = function(msg, cb) {
+        el.querySelector("#uiConfirmMsg").textContent = msg;
+        el.__cb = cb;
+        el.classList.add('is-open');
+        el.querySelector("#uiConfirmYes").onclick = function() {
+          const f = el.__cb;
+          hide();
+          if (f) f();
+        };
+      };
+      return el;
+    }
+
+    document.addEventListener("submit", function(e) {
+      const form = e.target;
+      if (!form || !form.getAttribute) return;
+      const msg = form.getAttribute("data-confirm");
+      if (!msg) return;
+      e.preventDefault();
+      ensureConfirm().show(msg, function() {
+        form.submit();
+      });
+    }, true);
+  })();
 </script>
 <?php require __DIR__ . '/admin/_layout_end.php'; ?>

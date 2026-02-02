@@ -89,7 +89,7 @@
   /* Composer: sticky, but compact */
   .ticket-chat .chat-compose {
     position: sticky;
-    bottom: 74px; /* bottom nav */
+    bottom: 64px; /* bottom nav */
     z-index: 40;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.08);
   }

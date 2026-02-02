@@ -37,6 +37,15 @@ class ChatController
             $this->unhideIfNeeded($cid, $meId);
         }
 
+        // ✅ Per-conversație: când deschid o conversație, o marcăm ca „citită”
+        // (folosit pentru badge-uri pe grupuri/conversații ca în WhatsApp).
+        // Nu afectează funcționalitățile existente; doar actualizează last_read_at.
+        try {
+            $pdo->prepare("\n                UPDATE conversation_participants\n                SET last_read_at = NOW()\n                WHERE conversation_id = ?\n                  AND user_id = ?\n                  AND left_at IS NULL\n            ")->execute([$cid, $meId]);
+        } catch (Throwable $e) {
+            // ignore
+        }
+
         $conversations = $this->getMyConversations($meId);
         $activeConversation = $this->getConversation($cid);
 
@@ -72,7 +81,10 @@ class ChatController
             try {
                 $pdo->query("SELECT last_seen_chat_v2_msg_id FROM users LIMIT 1");
             } catch (Throwable $e) {
-                try { $pdo->exec("ALTER TABLE users ADD COLUMN last_seen_chat_v2_msg_id INT NULL"); } catch (Throwable $e2) {}
+                try {
+                    $pdo->exec("ALTER TABLE users ADD COLUMN last_seen_chat_v2_msg_id INT NULL");
+                } catch (Throwable $e2) {
+                }
             }
 
             $st = $pdo->prepare("
@@ -89,7 +101,10 @@ class ChatController
             $st->execute([$meId]);
             $max = (int)($st->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
             $_SESSION['chat_v2_last_seen_id'] = $max;
-            try { $pdo->prepare("UPDATE users SET last_seen_chat_v2_msg_id=? WHERE id=? LIMIT 1")->execute([$max, $meId]); } catch (Throwable $e) {}
+            try {
+                $pdo->prepare("UPDATE users SET last_seen_chat_v2_msg_id=? WHERE id=? LIMIT 1")->execute([$max, $meId]);
+            } catch (Throwable $e) {
+            }
         } catch (Throwable $e) {
             // ignore
         }
@@ -272,10 +287,12 @@ class ChatController
                 SELECT id
                 FROM conversation_messages
                 WHERE conversation_id = ?
-                  AND id > ?
-                  AND sender_id = ?
+                AND id > ?
+                AND sender_id = ?
                 ORDER BY id ASC
             ");
+
+
             $st->execute([$cid, $from, $meId]);
             $ids = $st->fetchAll(PDO::FETCH_COLUMN);
 
@@ -311,6 +328,63 @@ class ChatController
     }
 
     /* =========================
+       UNREAD COUNTS (PER CONV)
+       ========================= */
+    public function unreadCounts(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        global $pdo;
+
+        Auth::requireRole(['admin', 'employee', 'staff']);
+
+        $meId = (int)($_SESSION['user']['id'] ?? 0);
+        if ($meId <= 0) {
+            echo json_encode(['ok' => false, 'data' => []]);
+            exit;
+        }
+
+        if (!$this->chatV2Enabled()) {
+            echo json_encode(['ok' => true, 'data' => []]);
+            exit;
+        }
+
+        try {
+            $st = $pdo->prepare(
+                "SELECT c.id,
+                        (
+                          SELECT COUNT(*)
+                          FROM conversation_messages cm2
+                          WHERE cm2.conversation_id = c.id
+                            AND cm2.sender_id <> :me1
+                            AND cm2.created_at > COALESCE(p.last_read_at, '1970-01-01 00:00:00')
+                        ) AS unread_count
+                 FROM conversations c
+                 JOIN conversation_participants p ON p.conversation_id = c.id
+                 WHERE p.user_id = :me2
+                   AND p.left_at IS NULL
+                   AND p.hidden_at IS NULL
+                   AND c.deleted_at IS NULL"
+            );
+            $st->execute(['me1' => $meId, 'me2' => $meId]);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+
+            $out = [];
+            foreach ($rows as $r) {
+                $id = (int)($r['id'] ?? 0);
+                if ($id <= 0) continue;
+                $out[$id] = (int)($r['unread_count'] ?? 0);
+            }
+
+            echo json_encode(['ok' => true, 'data' => $out]);
+            exit;
+        } catch (Throwable $e) {
+            echo json_encode(['ok' => false, 'data' => []]);
+            exit;
+        }
+    }
+
+    /* =========================
        MARK READ (ONLY when chat is visible)
        ========================= */
     public function markRead(): void
@@ -320,7 +394,14 @@ class ChatController
         Auth::requireRole(['admin', 'employee', 'staff']);
 
         $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $cid  = (int)($_GET['cid'] ?? ($_POST['cid'] ?? 0));
+
+        $cid = (int)(
+            $_GET['cid']
+            ?? $_POST['cid']
+            ?? $_POST['conversation_id']
+            ?? $_GET['conversation_id']
+            ?? 0
+        );
 
         if (!$this->chatV2Enabled()) {
             $this->legacyMarkRead();
@@ -332,15 +413,16 @@ class ChatController
         }
 
         $pdo->prepare("
-            UPDATE conversation_participants
-            SET last_read_at = NOW()
-            WHERE conversation_id = ?
-              AND user_id = ?
-              AND left_at IS NULL
+        UPDATE conversation_participants
+        SET last_read_at = NOW()
+        WHERE conversation_id = ?
+          AND user_id = ?
+          AND left_at IS NULL
         ")->execute([$cid, $meId]);
 
         $this->json(['ok' => true]);
     }
+
 
     /* =========================
        WhatsApp-like actions
@@ -645,13 +727,22 @@ class ChatController
     {
         global $pdo;
 
+        // ✅ Unread count per conversație (WhatsApp-like badge în dropdown)
+        // Folosește p.last_read_at (există deja pentru read receipts).
         $st = $pdo->prepare(
             "SELECT c.id, c.type, c.title,
                 (SELECT cm.created_at
                  FROM conversation_messages cm
                  WHERE cm.conversation_id = c.id
                  ORDER BY cm.id DESC
-                 LIMIT 1) AS last_at
+                 LIMIT 1) AS last_at,
+                (
+                  SELECT COUNT(*)
+                  FROM conversation_messages cm2
+                  WHERE cm2.conversation_id = c.id
+                    AND cm2.sender_id <> ?
+                    AND cm2.created_at > COALESCE(p.last_read_at, '1970-01-01 00:00:00')
+                ) AS unread_count
              FROM conversations c
              JOIN conversation_participants p ON p.conversation_id = c.id
              WHERE p.user_id = ?
@@ -660,7 +751,7 @@ class ChatController
                AND c.deleted_at IS NULL
              ORDER BY (last_at IS NULL) ASC, last_at DESC, c.id DESC"
         );
-        $st->execute([$meId]);
+        $st->execute([$meId, $meId]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as &$c) {
@@ -710,7 +801,8 @@ class ChatController
         try {
             $pdo->prepare("UPDATE conversation_participants SET last_delivered_at = NOW() WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL")
                 ->execute([$cid, $meId]);
-        } catch (Throwable $e) {}
+        } catch (Throwable $e) {
+        }
     }
 
     private function getMessages(int $cid, int $sinceId): array
