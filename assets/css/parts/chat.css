@@ -108,6 +108,24 @@
     gap: 10px;
   }
 
+  /* Mobile header cleanup: keep only the conversation dropdown + one menu button */
+  .chat-hide-mobile {
+    display: none !important;
+  }
+
+  /* Hide the desktop-only conversation actions menu on mobile */
+  .chat-actions {
+    display: none !important;
+  }
+
+  .chat-convpick {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .chat-convpick__label {
+    display: none;
+  }
+
   .ticket-chat .chat-compose .h3 {
     display: none;
   }
@@ -137,7 +155,7 @@
     border-radius: 14px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
     padding: 6px;
-    min-width: 210px;
+    min-width: 240px;
     z-index: 60;
   }
 
@@ -148,8 +166,30 @@
     background: transparent;
     padding: 10px 12px;
     border-radius: 12px;
-    font-weight: 800;
+    font-weight: 500;
     cursor: pointer;
+    font-size: 15px;
+  }
+
+  .chat-topmenu__link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .chat-topmenu__sep {
+    height: 1px;
+    background: rgba(17, 24, 39, 0.10);
+    margin: 6px 8px;
+    border-radius: 999px;
+  }
+
+  .chat-topmenu__item--danger {
+    color: #b42318;
+  }
+
+  .chat-topmenu__form {
+    margin: 0;
   }
   .chat-topmenu__item:hover {
     background: rgba(17, 24, 39, 0.04);
@@ -505,6 +545,13 @@ body.has-modal {
   padding: 76px 14px 14px;
 }
 
+/* Make sure the HTML [hidden] attribute always hides the modal.
+   This prevents "can't close" issues if responsive rules accidentally
+   override display for .chat-new. */
+.chat-new[hidden] {
+  display: none !important;
+}
+
 .chat-new.is-open {
   display: flex;
 }
@@ -624,15 +671,18 @@ body.has-modal {
 
 @media (max-width: 640px) {
   .chat-new {
-    align-items: flex-end;
-    padding: 0;
+    /* Center on mobile instead of bottom-sheet */
+    align-items: center;
+    padding: 16px;
   }
+
   .chat-new__dialog {
     width: 100%;
     max-height: calc(100dvh - 74px);
-    border-radius: 18px 18px 0 0;
-    padding: 14px 14px 18px;
+    border-radius: 18px;
+    padding: 14px;
   }
+
   .chat-new__head {
     position: sticky;
     top: 0;

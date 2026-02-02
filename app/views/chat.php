@@ -17,6 +17,10 @@ function isImgMime(?string $mime): bool
 
 <?php
   $cid = (int)($activeConversation['id'] ?? 0);
+  // Active conversation meta (used for header actions / permissions)
+  $meId = (int)($_SESSION['user']['id'] ?? 0);
+  $aType = (string)($activeConversation['type'] ?? 'general');
+  $aCreatedBy = (int)($activeConversation['created_by'] ?? 0);
 ?>
 
 <div class="page-header">
@@ -26,7 +30,7 @@ function isImgMime(?string $mime): bool
   </div>
 
   <div class="page-header__actions">
-    <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-ghost">⬅ Dashboard</a>
+    <a href="<?= BASE_URL ?>admin/dashboard" class="btn btn-ghost chat-hide-mobile">⬅ Dashboard</a>
 
     <?php if (!empty($conversations) && is_array($conversations)): ?>
       <div class="chat-convpick">
@@ -41,11 +45,6 @@ function isImgMime(?string $mime): bool
         </select>
       </div>
 
-      <?php
-        $meId = (int)($_SESSION['user']['id'] ?? 0);
-        $aType = (string)($activeConversation['type'] ?? 'general');
-        $aCreatedBy = (int)($activeConversation['created_by'] ?? 0);
-      ?>
       <?php if ($cid > 0 && $aType !== 'general'): ?>
         <div class="chat-actions" data-chat-actions>
           <button type="button" class="btn btn-ghost chat-actions__btn" data-chat-actions-btn aria-haspopup="menu" aria-expanded="false">⋯</button>
@@ -76,7 +75,7 @@ function isImgMime(?string $mime): bool
 
     <!-- Create DM / Group -->
     <?php if (!empty($users) && is_array($users)): ?>
-<button type="button" class="btn btn-ghost" data-chat-new-open>+ Nou</button>
+<button type="button" class="btn btn-ghost chat-hide-mobile" data-chat-new-open>+ Nou</button>
 
 <div class="chat-new" data-chat-new hidden>
   <div class="chat-new__backdrop" data-chat-new-close></div>
@@ -113,10 +112,44 @@ function isImgMime(?string $mime): bool
 
 <?php endif; ?>
 
-    <!-- Mobile: WhatsApp-like actions (⋮ → Search) -->
+    <!-- Mobile: one menu for all actions (keeps UI clean) -->
     <div class="chat-topmenu" data-chat-topmenu>
       <button type="button" class="btn btn-ghost chat-topmenu__btn" data-chat-menu-btn aria-label="Mai multe" aria-expanded="false">⋮</button>
       <div class="chat-topmenu__pop" data-chat-menu-pop hidden>
+        <a class="chat-topmenu__link chat-topmenu__item" href="<?= BASE_URL ?>admin/dashboard">⬅️ Dashboard</a>
+
+        <?php if (!empty($users) && is_array($users)): ?>
+          <button type="button" class="chat-topmenu__item" data-chat-new-open>➕ Conversație nouă</button>
+        <?php endif; ?>
+
+        <?php if (!empty($conversations) && is_array($conversations)): ?>
+          <button type="button" class="chat-topmenu__item" data-chat-focus-conv>🔽 Schimbă grup</button>
+        <?php endif; ?>
+
+        <?php if ($cid > 0 && $aType !== 'general'): ?>
+          <div class="chat-topmenu__sep"></div>
+          <form method="POST" action="<?= BASE_URL ?>chat-hide" class="chat-topmenu__form">
+            <input type="hidden" name="cid" value="<?= $cid ?>">
+            <button type="submit" class="chat-topmenu__item">🙈 Ascunde conversația</button>
+          </form>
+
+          <?php if ($aType === 'group'): ?>
+            <form method="POST" action="<?= BASE_URL ?>chat-leave" class="chat-topmenu__form" data-confirm="Părăsești grupul?">
+              <input type="hidden" name="conversation_id" value="<?= $cid ?>">
+              <button type="submit" class="chat-topmenu__item">👋 Părăsește grupul</button>
+            </form>
+          <?php endif; ?>
+
+          <?php if ($aCreatedBy === $meId): ?>
+            <div class="chat-topmenu__sep"></div>
+            <form method="POST" action="<?= BASE_URL ?>chat-delete" class="chat-topmenu__form" data-confirm="Ștergi conversația pentru toți participanții?">
+              <input type="hidden" name="conversation_id" value="<?= $cid ?>">
+              <button type="submit" class="chat-topmenu__item chat-topmenu__item--danger">🗑️ Șterge pentru toți</button>
+            </form>
+          <?php endif; ?>
+        <?php endif; ?>
+
+        <div class="chat-topmenu__sep"></div>
         <button type="button" class="chat-topmenu__item" data-chat-open-search>🔎 Caută în conversație</button>
       </div>
     </div>
@@ -259,9 +292,9 @@ function isImgMime(?string $mime): bool
 
   // New conversation modal (DM / Group) - overlay, no layout shift
   (function () {
-    const openBtn = document.querySelector('[data-chat-new-open]');
+    const openBtns = Array.from(document.querySelectorAll('[data-chat-new-open]'));
     const modal = document.querySelector('[data-chat-new]');
-    if (!openBtn || !modal) return;
+    if (!openBtns.length || !modal) return;
 
     // Safety: always start closed (prevents modal showing due to cached DOM state)
     modal.classList.remove('is-open');
@@ -284,10 +317,19 @@ function isImgMime(?string $mime): bool
       modal.classList.remove('is-open');
       modal.hidden = true;
       document.body.classList.remove('has-modal');
-      openBtn.focus({ preventScroll: true });
+      // focus the last trigger (better UX when there are multiple open buttons)
+      const t = window.__chatNewLastTrigger && document.contains(window.__chatNewLastTrigger)
+        ? window.__chatNewLastTrigger
+        : openBtns[0];
+      t?.focus?.({ preventScroll: true });
     }
 
-    openBtn.addEventListener('click', open);
+    openBtns.forEach((b) => {
+      b.addEventListener('click', () => {
+        window.__chatNewLastTrigger = b;
+        open();
+      });
+    });
 
     // Robust close: works even if the close button/backdrop is re-rendered
     closeBtns.forEach(b => b.addEventListener('click', close));
@@ -320,6 +362,10 @@ function isImgMime(?string $mime): bool
           hint.style.display = 'none';
           hint.textContent = '';
         }
+
+        // UX: close immediately after a valid submit.
+        // The form still submits normally (redirect will load the new conversation).
+        setTimeout(close, 0);
       });
     }
   })();
@@ -349,6 +395,7 @@ function isImgMime(?string $mime): bool
   const menuBtn = document.querySelector('[data-chat-menu-btn]');
   const menuPop = document.querySelector('[data-chat-menu-pop]');
   const openSearchBtn = document.querySelector('[data-chat-open-search]');
+  const focusConvBtn = document.querySelector('[data-chat-focus-conv]');
   const clearSearchBtn = document.querySelector('[data-chat-search-clear]');
 
   // Mobile compact send button
@@ -390,6 +437,16 @@ function isImgMime(?string $mime): bool
 
   if (openSearchBtn) {
     openSearchBtn.addEventListener('click', openSearch);
+  }
+
+  if (focusConvBtn) {
+    focusConvBtn.addEventListener('click', () => {
+      closeTopmenu();
+      if (convSelect) {
+        convSelect.focus({ preventScroll: true });
+        // On some mobile browsers, focusing is enough; selecting is done by the user.
+      }
+    });
   }
 
   if (clearSearchBtn && searchWrap) {
