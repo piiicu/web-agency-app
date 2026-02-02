@@ -154,28 +154,81 @@ class DashboardController
         $stmt->execute();
         $tasksPending = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
 
-        // 3) Chat: "new messages" since last seen (session-based)
-        $stmt = $pdo->prepare("SELECT MAX(id) AS m FROM messages");
-        $stmt->execute();
-        $maxMsgId = (int)($stmt->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
 
-        if (!isset($_SESSION['chat_last_seen_id'])) {
-            // prima dată când userul intră în admin: nu-l spamăm cu "mesaje noi" vechi
-            $_SESSION['chat_last_seen_id'] = $maxMsgId;
-            $chatNew = 0;
-        } else {
-            $lastSeen = (int)$_SESSION['chat_last_seen_id'];
-            $me = (int)Auth::id();
+		// 3) Chat: mesaje noi (V2 conversații) sau fallback legacy
+		$chatNew = 0;
+		$me = (int)Auth::id();
 
-            $stmt = $pdo->prepare("
-            SELECT COUNT(*) AS c
-            FROM messages
-            WHERE id > :lastSeen
-              AND user_id <> :me
-        ");
-            $stmt->execute(['lastSeen' => $lastSeen, 'me' => $me]);
-            $chatNew = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
-        }
+		$chatV2 = false;
+		try {
+			$pdo->query("SELECT 1 FROM conversations LIMIT 1");
+			$pdo->query("SELECT 1 FROM conversation_messages LIMIT 1");
+			$pdo->query("SELECT 1 FROM conversation_participants LIMIT 1");
+			$chatV2 = true;
+		} catch (Throwable $e) {
+			$chatV2 = false;
+		}
+
+		if ($chatV2) {
+			// Variante "clasică" și sigură: numărăm mesaje noi după un baseline în sesiune.
+			// Baseline-ul se setează când userul intră în Chat (vezi ChatController) și se actualizează pe poll în chat.
+			if (!isset($_SESSION['chat_v2_last_seen_id'])) {
+				// primul poll: nu afișăm istoric drept "nou".
+				$st = $pdo->prepare("
+					SELECT COALESCE(MAX(cm.id), 0) AS m
+					FROM conversation_messages cm
+					JOIN conversation_participants p
+					  ON p.conversation_id = cm.conversation_id
+					 AND p.user_id = ?
+					 AND p.left_at IS NULL
+					JOIN conversations c
+					  ON c.id = cm.conversation_id
+					 AND c.deleted_at IS NULL
+				");
+				$st->execute([$me]);
+				$_SESSION['chat_v2_last_seen_id'] = (int)($st->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+				$chatNew = 0;
+			} else {
+				$lastSeen = (int)$_SESSION['chat_v2_last_seen_id'];
+				$st = $pdo->prepare("
+					SELECT COUNT(*) AS c
+					FROM conversation_messages cm
+					JOIN conversation_participants p
+					  ON p.conversation_id = cm.conversation_id
+					 AND p.user_id = :me
+					 AND p.left_at IS NULL
+					JOIN conversations c
+					  ON c.id = cm.conversation_id
+					 AND c.deleted_at IS NULL
+					WHERE cm.id > :lastSeen
+					  AND cm.sender_id <> :me
+				");
+				$st->execute(['me' => $me, 'lastSeen' => $lastSeen]);
+				$chatNew = (int)($st->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+			}
+			} else {
+				// Legacy: "new messages" since last seen (session-based)
+				$stmt = $pdo->prepare("SELECT MAX(id) AS m FROM messages");
+				$stmt->execute();
+				$maxMsgId = (int)($stmt->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+
+				if (!isset($_SESSION['chat_last_seen_id'])) {
+					// prima dată când userul intră în admin: nu-l spamăm cu "mesaje noi" vechi
+					$_SESSION['chat_last_seen_id'] = $maxMsgId;
+					$chatNew = 0;
+				} else {
+					$lastSeen = (int)$_SESSION['chat_last_seen_id'];
+
+					$stmt = $pdo->prepare("
+						SELECT COUNT(*) AS c
+						FROM messages
+						WHERE id > :lastSeen
+						  AND user_id <> :me
+					");
+					$stmt->execute(['lastSeen' => $lastSeen, 'me' => $me]);
+					$chatNew = (int)($stmt->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+				}
+			}
 
         echo json_encode([
             'tickets_open'  => $ticketsOpen,

@@ -926,13 +926,6 @@ input:-webkit-autofill:focus {
   white-space: nowrap;
 }
 
-.badge::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #9ca3af;
-}
 
 .badge--open {
   border-color: rgba(16, 185, 129, 0.35);

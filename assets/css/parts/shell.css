@@ -90,6 +90,7 @@
   appearance: none;
   border: 0;
   background: transparent;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,6 +101,39 @@
   color: #111827;
   font-size: 12px;
   cursor: pointer;
+}
+
+.app-bottomnav__badge {
+  /* visible by default; JS updates value + .is-zero styling */
+  display: inline-block;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #d61b59;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+}
+
+.app-bottomnav__badge.is-zero {
+  background: #e5e7eb;
+  color: #111827;
+  opacity: .65;
+  box-shadow: none;
+}
+
+/* Sidebar badges: keep visible even at 0 */
+.sidebar .badge.is-zero {
+  background: #e5e7eb;
+  color: #111827;
+  opacity: .65;
 }
 
 .app-bottomnav__icon {

@@ -644,4 +644,59 @@ body.has-modal {
   }
 }
 
+/* =====================
+   Confirm popup (custom)
+   ===================== */
+.ui-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+}
+
+.ui-confirm.is-open {
+  display: block;
+}
+
+.ui-confirm__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.ui-confirm__dialog {
+  position: relative;
+  width: calc(100vw - 24px);
+  max-width: 420px;
+  margin: 12vh auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+  padding: 16px;
+}
+
+.ui-confirm__title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.ui-confirm__msg {
+  margin: 8px 0 14px;
+  line-height: 1.4;
+}
+
+.ui-confirm__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .ui-confirm__dialog {
+    max-width: 340px;
+    margin: 10vh auto;
+    padding: 14px;
+  }
+}
+
 

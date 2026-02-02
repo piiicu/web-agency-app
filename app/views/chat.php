@@ -57,7 +57,7 @@ function isImgMime(?string $mime): bool
 
             <?php if ($aType === 'group'): ?>
               <form method="POST" action="<?= BASE_URL ?>chat-leave" class="chat-actions__form" data-confirm="Părăsești grupul?">
-                <input type="hidden" name="cid" value="<?= $cid ?>">
+                <input type="hidden" name="conversation_id" value="<?= $cid ?>">
                 <button type="submit" class="chat-actions__item">Părăsește grupul</button>
               </form>
             <?php endif; ?>
@@ -65,7 +65,7 @@ function isImgMime(?string $mime): bool
             <?php if ($aCreatedBy === $meId): ?>
               <div class="chat-actions__sep"></div>
               <form method="POST" action="<?= BASE_URL ?>chat-delete" class="chat-actions__form" data-confirm="Ștergi conversația pentru toți participanții?">
-                <input type="hidden" name="cid" value="<?= $cid ?>">
+                <input type="hidden" name="conversation_id" value="<?= $cid ?>">
                 <button type="submit" class="chat-actions__item chat-actions__item--danger">Șterge pentru toți</button>
               </form>
             <?php endif; ?>
@@ -667,29 +667,25 @@ markRead();
     if (el) return el;
     el = document.createElement("div");
     el.id = "uiConfirm";
-    el.style.position = "fixed";
-    el.style.inset = "0";
-    el.style.zIndex = "9999";
-    el.style.display = "none";
+    el.className = "ui-confirm";
     el.innerHTML = `
-      <div id="uiConfirmBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.42)"></div>
-      <div style="position:relative;max-width:420px;margin:12vh auto;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25);padding:16px">
-        <div style="font-weight:700;margin-bottom:8px">Confirmare</div>
-        <div id="uiConfirmMsg" style="margin:8px 0 14px;line-height:1.4"></div>
-        <div style="display:flex;gap:10px;justify-content:flex-end">
-          <button type="button" id="uiConfirmNo" class="btn">Renunță</button>
+      <div class="ui-confirm__backdrop" data-ui-confirm-close></div>
+      <div class="ui-confirm__dialog" role="dialog" aria-modal="true" aria-label="Confirmare">
+        <div class="ui-confirm__title">Confirmare</div>
+        <div id="uiConfirmMsg" class="ui-confirm__msg"></div>
+        <div class="ui-confirm__actions">
+          <button type="button" id="uiConfirmNo" class="btn" data-ui-confirm-close>Renunță</button>
           <button type="button" id="uiConfirmYes" class="btn">OK</button>
         </div>
       </div>`;
     document.body.appendChild(el);
-    function hide(){ el.style.display = "none"; el.__cb = null; }
-    el.querySelector("#uiConfirmBackdrop").addEventListener("click", hide);
-    el.querySelector("#uiConfirmNo").addEventListener("click", hide);
+    function hide(){ el.classList.remove('is-open'); el.__cb = null; }
+    el.querySelectorAll('[data-ui-confirm-close]').forEach((n) => n.addEventListener('click', hide));
     el.hide = hide;
     el.show = function(msg, cb){
       el.querySelector("#uiConfirmMsg").textContent = msg;
       el.__cb = cb;
-      el.style.display = "block";
+      el.classList.add('is-open');
       el.querySelector("#uiConfirmYes").onclick = function(){ const f = el.__cb; hide(); if (f) f(); };
     };
     return el;

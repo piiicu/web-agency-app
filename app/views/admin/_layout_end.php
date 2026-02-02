@@ -28,14 +28,19 @@
     <a class="app-bottomnav__item <?= $active('admin/tickets') ?>" href="<?= BASE_URL ?>admin/tickets" aria-label="Tickets">
       <span class="app-bottomnav__icon">🎫</span>
       <span class="app-bottomnav__label">Tichete</span>
+      <span id="badgeTicketsMobile" class="app-bottomnav__badge" aria-hidden="true">0</span>
     </a>
-    <a class="app-bottomnav__item <?= $active('admin/clients') ?>" href="<?= BASE_URL ?>admin/clients" aria-label="Clients">
-      <span class="app-bottomnav__icon">👥</span>
-      <span class="app-bottomnav__label">Clienți</span>
+
+    <a class="app-bottomnav__item <?= $active('chat') ?>" href="<?= BASE_URL ?>chat" aria-label="Chat intern">
+      <span class="app-bottomnav__icon">💬</span>
+      <span class="app-bottomnav__label">Chat</span>
+      <span id="badgeChatMobile" class="app-bottomnav__badge" aria-hidden="true">0</span>
     </a>
-    <a class="app-bottomnav__item <?= $active('admin/settings') ?>" href="<?= BASE_URL ?>admin/settings" aria-label="Settings">
-      <span class="app-bottomnav__icon">⚙️</span>
-      <span class="app-bottomnav__label">Setări</span>
+
+    <a class="app-bottomnav__item <?= $active('tasks') ?>" href="<?= BASE_URL ?>tasks" aria-label="Task-uri interne">
+      <span class="app-bottomnav__icon">✅</span>
+      <span class="app-bottomnav__label">Task-uri</span>
+      <span id="badgeTasksMobile" class="app-bottomnav__badge" aria-hidden="true">0</span>
     </a>
     <button class="app-bottomnav__item" type="button" data-sidebar-open aria-label="Menu">
       <span class="app-bottomnav__icon">☰</span>

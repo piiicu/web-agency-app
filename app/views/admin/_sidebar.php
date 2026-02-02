@@ -41,15 +41,14 @@ function active($needle, $current) {
 </aside>
 
 <script>
+  // Badge behavior (clasic): badge-ul apare doar când valoarea este > 0
   function setBadge(el, value) {
     if (!el) return;
-    const n = parseInt(value || 0, 10);
-    if (n > 0) {
-      el.textContent = n;
-      el.style.display = 'inline-block';
-    } else {
-      el.style.display = 'none';
-    }
+    const n = Number.isFinite(Number(value)) ? parseInt(value, 10) : 0;
+    el.textContent = String(n);
+
+    // show only when > 0
+    el.style.display = (n > 0) ? '' : 'none';
   }
 
   async function pollBadges() {
@@ -64,7 +63,14 @@ function active($needle, $current) {
       setBadge(document.getElementById('badgeTickets'), data.tickets_open);
       setBadge(document.getElementById('badgeTasks'), data.tasks_pending);
       setBadge(document.getElementById('badgeChat'), data.chat_new);
-    } catch (e) {}
+
+      // Mobile bottom nav (if present)
+      setBadge(document.getElementById('badgeTicketsMobile'), data.tickets_open);
+      setBadge(document.getElementById('badgeTasksMobile'), data.tasks_pending);
+      setBadge(document.getElementById('badgeChatMobile'), data.chat_new);
+    } catch (e) {
+      // ignore polling errors (e.g. non-JSON redirect) without breaking UI
+    }
   }
 
   pollBadges();

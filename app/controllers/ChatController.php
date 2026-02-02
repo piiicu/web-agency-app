@@ -64,6 +64,27 @@ class ChatController
         unset($m);
 
         $pageTitle = 'Chat intern';
+
+        // ✅ Notificări (badge): când userul intră în Chat, marcăm tot ce există acum ca "văzut"
+        // (baseline global pentru conversațiile în care participă).
+        try {
+            $st = $pdo->prepare("
+                SELECT COALESCE(MAX(cm.id), 0) AS m
+                FROM conversation_messages cm
+                JOIN conversation_participants p
+                  ON p.conversation_id = cm.conversation_id
+                 AND p.user_id = ?
+                 AND p.left_at IS NULL
+                JOIN conversations c
+                  ON c.id = cm.conversation_id
+                 AND c.deleted_at IS NULL
+            ");
+            $st->execute([$meId]);
+            $_SESSION['chat_v2_last_seen_id'] = (int)($st->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+        } catch (Throwable $e) {
+            // ignore
+        }
+
         require __DIR__ . '/../views/chat.php';
     }
 
@@ -252,6 +273,26 @@ class ChatController
             $statuses = [];
             foreach ($ids as $mid) {
                 $statuses[] = $this->messageStatus((int)$mid, $cid, $meId);
+            }
+
+            // ✅ Notificări (badge): cât timp sunt în chat (poll), actualizăm baseline-ul
+            // ca să dispară badge-ul după ce ai văzut conversația.
+            try {
+                $st = $pdo->prepare("
+                    SELECT COALESCE(MAX(cm.id), 0) AS m
+                    FROM conversation_messages cm
+                    JOIN conversation_participants p
+                      ON p.conversation_id = cm.conversation_id
+                     AND p.user_id = ?
+                     AND p.left_at IS NULL
+                    JOIN conversations c
+                      ON c.id = cm.conversation_id
+                     AND c.deleted_at IS NULL
+                ");
+                $st->execute([$meId]);
+                $_SESSION['chat_v2_last_seen_id'] = (int)($st->fetch(PDO::FETCH_ASSOC)['m'] ?? 0);
+            } catch (Throwable $e) {
+                // ignore
             }
 
             $this->json(['messages' => $rows, 'statuses' => $statuses]);
