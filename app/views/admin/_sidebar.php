@@ -14,17 +14,17 @@ function active($needle, $current) {
 
   <a class="nav-item <?= active('admin/tickets', $current) ?>" href="<?= BASE_URL ?>admin/tickets">
     <span>🎫 Tichete</span>
-    <span id="badgeTickets" class="badge">0</span>
+    <span id="badgeTickets" class="badge" style="display:none"></span>
   </a>
 
   <a class="nav-item <?= active('chat', $current) ?>" href="<?= BASE_URL ?>chat">
     <span>💬 Chat intern</span>
-    <span id="badgeChat" class="badge">0</span>
+    <span id="badgeChat" class="badge" style="display:none"></span>
   </a>
 
   <a class="nav-item <?= active('tasks', $current) ?>" href="<?= BASE_URL ?>tasks">
     <span>✅ Task-uri interne</span>
-    <span id="badgeTasks" class="badge">0</span>
+    <span id="badgeTasks" class="badge" style="display:none"></span>
   </a>
 
   <a class="nav-item <?= active('admin/clients', $current) ?>" href="<?= BASE_URL ?>admin/clients">
