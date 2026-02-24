@@ -15,7 +15,7 @@
 
         <label class="label" for="ticket_status">Status</label>
 
-        <div style="width: 180px; max-width: 100%;">
+        <div style="width: 200px; max-width: 100%;">
           <select id="ticket_status" name="status" class="input" data-cselect>
             <?php foreach (['open','resolved'] as $s): ?>
               <option value="<?= $s ?>" <?= $ticket['status'] === $s ? 'selected' : '' ?>>

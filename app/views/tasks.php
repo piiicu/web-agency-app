@@ -61,22 +61,43 @@ function preview_text(string $text, int $max = 160): string {
   <div class="page-header__actions">
     <!-- Search (current tab) -->
     <form method="GET" action="<?= BASE_URL ?>tasks" class="tasks-toolbar" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <input type="hidden" name="route" value="tasks">
       <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
-      <input type="hidden" name="filter" value="<?= htmlspecialchars($activeFilter) ?>">
 
       <input class="input" type="text" name="<?= $tab === 'done' ? 'q_done' : 'q' ?>"
              placeholder="Caută task..." value="<?= htmlspecialchars($tab === 'done' ? $q_done : $q) ?>"
              style="min-width:260px;">
 
-      <select class="input" name="filter" style="width:auto;" aria-label="Filtru" onchange="this.form.submit()">
-        <option value="all" <?= $activeFilter==='all' ? 'selected' : '' ?>>Toate</option>
-        <option value="urgent" <?= $activeFilter==='urgent' ? 'selected' : '' ?>>Urgente (1–2)</option>
-        <option value="p1" <?= $activeFilter==='p1' ? 'selected' : '' ?>>Prioritate 1</option>
-        <option value="p2" <?= $activeFilter==='p2' ? 'selected' : '' ?>>Prioritate 2</option>
-        <option value="p3" <?= $activeFilter==='p3' ? 'selected' : '' ?>>Prioritate 3</option>
-        <option value="p4" <?= $activeFilter==='p4' ? 'selected' : '' ?>>Prioritate 4</option>
-        <option value="p5" <?= $activeFilter==='p5' ? 'selected' : '' ?>>Prioritate 5</option>
-      </select>
+      <?php
+        $filterLabels = [
+          'all'    => 'Toate',
+          'urgent' => 'Urgente (1–2)',
+          'p1'     => 'Prioritate 1',
+          'p2'     => 'Prioritate 2',
+          'p3'     => 'Prioritate 3',
+          'p4'     => 'Prioritate 4',
+          'p5'     => 'Prioritate 5',
+        ];
+        $activeFilterLabel = $filterLabels[$activeFilter] ?? 'Toate';
+      ?>
+
+      <!-- Premium custom dropdown (no native <select>) -->
+      <div class="wa-select" data-wa-select>
+        <button class="wa-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="wa-select__value" data-wa-select-value><?= htmlspecialchars($activeFilterLabel) ?></span>
+          <span class="wa-select__chev" aria-hidden="true">▾</span>
+        </button>
+        <div class="wa-select__menu" role="listbox" aria-label="Filtru">
+          <button type="button" class="wa-select__option <?= $activeFilter==='all' ? 'is-active' : '' ?>" data-value="all">Toate</button>
+          <button type="button" class="wa-select__option <?= $activeFilter==='urgent' ? 'is-active' : '' ?>" data-value="urgent">Urgente (1–2)</button>
+          <button type="button" class="wa-select__option <?= $activeFilter==='p1' ? 'is-active' : '' ?>" data-value="p1">Prioritate 1</button>
+          <button type="button" class="wa-select__option <?= $activeFilter==='p2' ? 'is-active' : '' ?>" data-value="p2">Prioritate 2</button>
+          <button type="button" class="wa-select__option <?= $activeFilter==='p3' ? 'is-active' : '' ?>" data-value="p3">Prioritate 3</button>
+          <button type="button" class="wa-select__option <?= $activeFilter==='p4' ? 'is-active' : '' ?>" data-value="p4">Prioritate 4</button>
+          <button type="button" class="wa-select__option <?= $activeFilter==='p5' ? 'is-active' : '' ?>" data-value="p5">Prioritate 5</button>
+        </div>
+      </div>
+      <input type="hidden" name="filter" value="<?= htmlspecialchars($activeFilter) ?>" data-wa-select-input>
 
       <button class="btn btn--ghost" type="submit">🔎</button>
 
@@ -148,7 +169,7 @@ function preview_text(string $text, int $max = 160): string {
                       <input type="hidden" name="id" value="<?= $tid ?>">
                       <button class="kebab-item" type="submit" role="menuitem">Marchează ca rezolvat</button>
                     </form>
-                    <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" onsubmit="return confirm('Ștergi task-ul?');">
+                    <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" data-confirm="Ștergi task-ul?">
                       <input type="hidden" name="id" value="<?= $tid ?>">
                       <button class="kebab-item kebab-item--danger" type="submit" role="menuitem">Șterge</button>
                     </form>
@@ -186,13 +207,15 @@ function preview_text(string $text, int $max = 160): string {
                 <input type="hidden" name="id" value="<?= $tid ?>">
                 <button class="btn" type="submit">✅ Rezolvat</button>
               </form>
-              <button class="btn btn--ghost" type="button" onclick="TasksUI.toggleMenu(event, <?= $tid ?>)">⋯</button>
-              <div class="kebab-menu" id="kebab-<?= $tid ?>" role="menu" aria-hidden="true">
-                <button type="button" class="kebab-item" role="menuitem" onclick="TasksUI.openDetails(<?= $tid ?>)">Deschide</button>
-                <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" onsubmit="return confirm('Ștergi task-ul?');">
-                  <input type="hidden" name="id" value="<?= $tid ?>">
-                  <button class="kebab-item kebab-item--danger" type="submit" role="menuitem">Șterge</button>
-                </form>
+              <div class="kebab">
+                <button class="btn btn--ghost" type="button" aria-haspopup="menu" aria-label="Acțiuni" onclick="TasksUI.toggleMenu(event, <?= $tid ?>)">⋯</button>
+                <div class="kebab-menu" id="kebab-<?= $tid ?>" role="menu" aria-hidden="true">
+                  <button type="button" class="kebab-item" role="menuitem" onclick="TasksUI.openDetails(<?= $tid ?>)">Deschide</button>
+                  <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" data-confirm="Ștergi task-ul?">
+                    <input type="hidden" name="id" value="<?= $tid ?>">
+                    <button class="kebab-item kebab-item--danger" type="submit" role="menuitem">Șterge</button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -245,7 +268,7 @@ function preview_text(string $text, int $max = 160): string {
                       <input type="hidden" name="id" value="<?= $tid ?>">
                       <button class="kebab-item" type="submit" role="menuitem">Mută înapoi la De făcut</button>
                     </form>
-                    <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" onsubmit="return confirm('Ștergi task-ul?');">
+                    <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" data-confirm="Ștergi task-ul?">
                       <input type="hidden" name="id" value="<?= $tid ?>">
                       <button class="kebab-item kebab-item--danger" type="submit" role="menuitem">Șterge</button>
                     </form>
@@ -283,13 +306,15 @@ function preview_text(string $text, int $max = 160): string {
                 <input type="hidden" name="id" value="<?= $tid ?>">
                 <button class="btn" type="submit">↩ Înapoi</button>
               </form>
-              <button class="btn btn--ghost" type="button" onclick="TasksUI.toggleMenu(event, <?= $tid ?>)">⋯</button>
-              <div class="kebab-menu" id="kebab-<?= $tid ?>" role="menu" aria-hidden="true">
-                <button type="button" class="kebab-item" role="menuitem" onclick="TasksUI.openDetails(<?= $tid ?>)">Deschide</button>
-                <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" onsubmit="return confirm('Ștergi task-ul?');">
-                  <input type="hidden" name="id" value="<?= $tid ?>">
-                  <button class="kebab-item kebab-item--danger" type="submit" role="menuitem">Șterge</button>
-                </form>
+              <div class="kebab">
+                <button class="btn btn--ghost" type="button" aria-haspopup="menu" aria-label="Acțiuni" onclick="TasksUI.toggleMenu(event, <?= $tid ?>)">⋯</button>
+                <div class="kebab-menu" id="kebab-<?= $tid ?>" role="menu" aria-hidden="true">
+                  <button type="button" class="kebab-item" role="menuitem" onclick="TasksUI.openDetails(<?= $tid ?>)">Deschide</button>
+                  <form method="POST" action="<?= BASE_URL ?>tasks-delete" style="margin:0;" data-confirm="Ștergi task-ul?">
+                    <input type="hidden" name="id" value="<?= $tid ?>">
+                    <button class="kebab-item kebab-item--danger" type="submit" role="menuitem">Șterge</button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -379,7 +404,7 @@ function preview_text(string $text, int $max = 160): string {
                   <button class="btn" type="submit" id="taskDoneBtn">✅ Marchează ca rezolvat</button>
                 </form>
 
-                <form method="POST" action="<?= BASE_URL ?>tasks-delete" id="taskDeleteForm" style="margin:0;" onsubmit="return confirm('Ștergi task-ul?');">
+                <form method="POST" action="<?= BASE_URL ?>tasks-delete" id="taskDeleteForm" style="margin:0;" data-confirm="Ștergi task-ul?">
                   <input type="hidden" name="id" id="taskDeleteId" value="0">
                   <button class="btn btn-danger" type="submit">🗑 Șterge</button>
                 </form>
@@ -688,12 +713,17 @@ function preview_text(string $text, int $max = 160): string {
       e.preventDefault();
       e.stopPropagation();
 
-      if (menuOpenId && menuOpenId !== id) closeAnyMenu();
-      const menu = document.getElementById('kebab-' + id);
+      // IMPORTANT (mobile cards): the table view may still exist in DOM (hidden via CSS),
+      // which can create duplicate IDs for kebab menus. Using getElementById would then
+      // toggle the hidden menu. Always resolve the menu relative to the clicked button.
+      const kebabWrap = e.currentTarget ? e.currentTarget.closest('.kebab') : null;
+      const menu = kebabWrap ? kebabWrap.querySelector('.kebab-menu') : document.getElementById('kebab-' + id);
       if (!menu) return;
 
+      // Close other open menus first
+      closeAnyMenu(menu);
+
       const isOpen = menu.classList.contains('is-open');
-      closeAnyMenu();
       if (!isOpen) {
         menu.classList.add('is-open');
         menu.setAttribute('aria-hidden', 'false');
@@ -706,13 +736,13 @@ function preview_text(string $text, int $max = 160): string {
       }
     }
 
-    function closeAnyMenu() {
-      if (!menuOpenId) return;
-      const menu = document.getElementById('kebab-' + menuOpenId);
-      if (menu) {
-        menu.classList.remove('is-open');
-        menu.setAttribute('aria-hidden', 'true');
-      }
+    function closeAnyMenu(exceptEl) {
+      // Close ALL open kebab menus (works even when there are duplicate IDs in DOM).
+      document.querySelectorAll('.kebab-menu.is-open').forEach(m => {
+        if (exceptEl && m === exceptEl) return;
+        m.classList.remove('is-open');
+        m.setAttribute('aria-hidden', 'true');
+      });
       menuOpenId = null;
     }
 
@@ -729,6 +759,110 @@ function preview_text(string $text, int $max = 160): string {
       deleteAttachment,
       toggleMenu,
     };
+  })();
+</script>
+
+<script>
+  // Premium dropdown for filter (no native <select>)
+  (function initTasksFilterDropdown() {
+    function closeAll(except) {
+      document.querySelectorAll('.wa-select.is-open').forEach(s => {
+        if (except && s === except) return;
+        s.classList.remove('is-open');
+        const t = s.querySelector('.wa-select__trigger');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    function wire(select) {
+      const trigger = select.querySelector('.wa-select__trigger');
+      const menu = select.querySelector('.wa-select__menu');
+      const valueEl = select.querySelector('[data-wa-select-value]');
+      const input = select.parentElement && select.parentElement.querySelector('[data-wa-select-input]');
+      const form = select.closest('form');
+      if (!trigger || !menu || !valueEl || !input || !form) return;
+
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = select.classList.toggle('is-open');
+        closeAll(isOpen ? select : null);
+        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+
+      menu.querySelectorAll('.wa-select__option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.preventDefault();
+          const v = opt.getAttribute('data-value') || 'all';
+          input.value = v;
+          valueEl.textContent = opt.textContent.trim();
+          menu.querySelectorAll('.wa-select__option').forEach(o => o.classList.remove('is-active'));
+          opt.classList.add('is-active');
+          closeAll();
+          // Submit immediately (keeps existing behaviour of onchange)
+          form.submit();
+        });
+      });
+    }
+
+    document.addEventListener('click', () => closeAll());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-wa-select]').forEach(wire);
+    });
+  })();
+</script>
+
+<script>
+  // Custom confirm popup (same UX as Chat intern)
+  (function() {
+    function ensureConfirm() {
+      let el = document.querySelector('.ui-confirm');
+      if (el) return el;
+      el = document.createElement('div');
+      el.className = 'ui-confirm';
+      el.innerHTML = `
+        <div class="ui-confirm__backdrop" data-ui-confirm-close></div>
+        <div class="ui-confirm__dialog" role="dialog" aria-modal="true" aria-label="Confirmare">
+          <div class="ui-confirm__title">Confirmare</div>
+          <div id="uiConfirmMsg" class="ui-confirm__msg"></div>
+          <div class="ui-confirm__actions">
+            <button type="button" id="uiConfirmNo" class="btn" data-ui-confirm-close>Renunță</button>
+            <button type="button" id="uiConfirmYes" class="btn">OK</button>
+          </div>
+        </div>`;
+      document.body.appendChild(el);
+
+      function hide() {
+        el.classList.remove('is-open');
+        el.__cb = null;
+      }
+      el.querySelectorAll('[data-ui-confirm-close]').forEach((n) => n.addEventListener('click', hide));
+      el.hide = hide;
+      el.show = function(msg, cb) {
+        el.querySelector('#uiConfirmMsg').textContent = msg;
+        el.__cb = cb;
+        el.classList.add('is-open');
+        el.querySelector('#uiConfirmYes').onclick = function() {
+          const f = el.__cb;
+          hide();
+          if (f) f();
+        };
+      };
+      return el;
+    }
+
+    document.addEventListener('submit', function(e) {
+      const form = e.target;
+      if (!form || !form.getAttribute) return;
+      const msg = form.getAttribute('data-confirm');
+      if (!msg) return;
+      e.preventDefault();
+      ensureConfirm().show(msg, function() {
+        form.submit();
+      });
+    }, true);
   })();
 </script>
 
