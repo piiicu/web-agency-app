@@ -17,6 +17,7 @@ require_once __DIR__ . '/app/core/Auth.php';
 
 require_once __DIR__ . '/app/controllers/AuthController.php';
 require_once __DIR__ . '/app/controllers/TaskController.php';
+require_once __DIR__ . '/app/controllers/TaskAttachmentController.php';
 require_once __DIR__ . '/app/controllers/ChatController.php';
 require_once __DIR__ . '/app/controllers/ChatAttachmentController.php';
 require_once __DIR__ . '/app/controllers/TicketController.php';
@@ -33,6 +34,8 @@ $route = $_GET['route'] ?? 'login';
 $protected = [
     'dashboard',
     'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite',
+    'tasks-view', 'tasks-autosave',
+    'task-attachment', 'task-attachment-upload', 'task-attachment-delete',
     'chat', 'chat-poll', 'chat-mark-read', 'chat-dm', 'chat-group',
     'chat-unread-counts',
     'chat-attachment',
@@ -54,7 +57,9 @@ if (in_array($route, $protected, true) && !isset($_SESSION['user'])) {
 
 /* ✅ PASUL 2D — PROTECȚIE ROLE-BASED PENTRU TASKS (doar staff/admin) */
 $adminOnlyRoutes = [
-    'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite'
+    'tasks', 'tasks-update', 'tasks-delete', 'tasks-done', 'tasks-favorite',
+    'tasks-view', 'tasks-autosave',
+    'task-attachment', 'task-attachment-upload', 'task-attachment-delete'
 ];
 
 if (in_array($route, $adminOnlyRoutes, true)) {
@@ -126,6 +131,31 @@ if ($route === 'tasks-done' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($route === 'tasks-favorite' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     (new TaskController())->toggleFavorite();
+    exit;
+}
+
+if ($route === 'tasks-view' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new TaskController())->view();
+    exit;
+}
+
+if ($route === 'tasks-autosave' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new TaskController())->autosave();
+    exit;
+}
+
+if ($route === 'task-attachment' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new TaskAttachmentController())->download();
+    exit;
+}
+
+if ($route === 'task-attachment-upload' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new TaskAttachmentController())->upload();
+    exit;
+}
+
+if ($route === 'task-attachment-delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    (new TaskAttachmentController())->delete();
     exit;
 }
 

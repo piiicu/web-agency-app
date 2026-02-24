@@ -281,6 +281,7 @@ INSERT INTO `password_resets` (`id`, `user_id`, `token_hash`, `expires_at`, `use
 CREATE TABLE `tasks` (
   `id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
   `status` enum('pending','done') DEFAULT 'pending',
   `priority` tinyint(4) NOT NULL DEFAULT 3,
   `is_favorite` tinyint(1) NOT NULL DEFAULT 0,
@@ -305,6 +306,31 @@ INSERT INTO `tasks` (`id`, `title`, `status`, `priority`, `is_favorite`, `create
 (11, 'task notificare', 'pending', 3, 0, '2026-02-02 07:35:10'),
 (12, 'task', 'pending', 3, 0, '2026-02-02 08:24:13'),
 (13, 'task verificare notificare', 'pending', 3, 0, '2026-02-02 08:55:09');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_attachments`
+--
+
+CREATE TABLE `task_attachments` (
+  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `original_name` varchar(255) NOT NULL,
+  `stored_name` varchar(255) NOT NULL,
+  `mime_type` varchar(100) DEFAULT NULL,
+  `size_bytes` int(11) NOT NULL DEFAULT 0,
+  `uploaded_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `task_attachments`
+--
+
+INSERT INTO `task_attachments` (`id`, `task_id`, `original_name`, `stored_name`, `mime_type`, `size_bytes`, `uploaded_by`, `created_at`) VALUES
+-- (1, 1, 'exemplu.pdf', '...', 'application/pdf', 12345, 1, '2026-02-02 08:55:09')
+;
 
 -- --------------------------------------------------------
 
@@ -497,6 +523,14 @@ ALTER TABLE `tasks`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `task_attachments`
+--
+ALTER TABLE `task_attachments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_task_id` (`task_id`),
+  ADD KEY `idx_uploaded_by` (`uploaded_by`);
+
+--
 -- Indexes for table `tickets`
 --
 ALTER TABLE `tickets`
@@ -573,6 +607,12 @@ ALTER TABLE `password_resets`
 --
 ALTER TABLE `tasks`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `task_attachments`
+--
+ALTER TABLE `task_attachments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
 --
 -- AUTO_INCREMENT for table `tickets`
